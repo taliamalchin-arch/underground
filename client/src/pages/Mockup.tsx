@@ -1,5 +1,47 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+
+// Animation styles
+const animationStyles = `
+@keyframes slideUp {
+  from {
+    transform: translateY(40px);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleExpand {
+  from {
+    transform: scale(0.95);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-expand {
+  animation: scaleExpand 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.smooth-layout {
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.smooth-resize {
+  transition: aspect-ratio 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+              width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+              height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+              transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+`;
 
 // Design System Constants
 const SPACING = {
@@ -128,7 +170,7 @@ const AboveGroundCard = ({
 
   return (
     <Card
-      className="w-full border-0 flex flex-col cursor-pointer transition-all duration-300"
+      className="w-full border-0 flex flex-col cursor-pointer smooth-resize"
       style={{
         aspectRatio: getAspectRatio(),
         borderRadius: SPACING.cardRadius,
@@ -321,7 +363,7 @@ const ThoughtExperimentCard = ({
 
   return (
     <Card
-      className="w-full border-0 flex flex-col cursor-pointer transition-all duration-300"
+      className="w-full border-0 flex flex-col cursor-pointer smooth-resize"
       style={{
         aspectRatio: isExpanded ? "404/380" : "195/190",
         borderRadius: SPACING.cardRadius,
@@ -496,12 +538,24 @@ const HalfImagesCard = ({
 export const Mockup = (): JSX.Element => {
   // Global expand state: null = none expanded, 'aboveGround' = Above Ground expanded, 'thoughtExperiment' = Thought Experiment expanded
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // Trigger entrance animations after mount
+    const timer = setTimeout(() => setMounted(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const isThoughtExperimentExpanded = expandedCard === 'thoughtExperiment';
   const isAboveGroundExpanded = expandedCard === 'aboveGround';
 
+  // Staggered animation delays
+  const getAnimationDelay = (index: number) => `${index * 0.08}s`;
+
   return (
-    <div className="bg-[#2f2f2f] min-h-screen w-full flex justify-center">
+    <>
+      <style>{animationStyles}</style>
+      <div className="bg-[#2f2f2f] min-h-screen w-full flex justify-center">
       <div
         className="w-full max-w-[600px] flex flex-col"
         style={{
@@ -516,38 +570,48 @@ export const Mockup = (): JSX.Element => {
         {isThoughtExperimentExpanded ? (
           <>
             {/* When Thought Experiment is expanded: Above Ground (quarter) + Factle (quarter) side by side */}
-            <div className="flex w-full" style={{ gap: SPACING.cardGap }}>
-              <div style={{ width: 'calc(50% - 7px)' }}>
+            <div 
+              className={`flex w-full smooth-layout ${mounted ? 'animate-slide-up' : ''}`} 
+              style={{ gap: SPACING.cardGap, animationDelay: getAnimationDelay(1) }}
+            >
+              <div className="smooth-layout" style={{ width: 'calc(50% - 7px)' }}>
                 <AboveGroundCard
                   forcedQuarter={true}
                   onExpand={() => setExpandedCard('aboveGround')}
                   onCollapse={() => setExpandedCard(null)}
                 />
               </div>
-              <div style={{ width: 'calc(50% - 7px)' }}>
+              <div className="smooth-layout" style={{ width: 'calc(50% - 7px)' }}>
                 <FactleFlipCard />
               </div>
             </div>
             {/* Thought Experiment expanded to full width */}
-            <ThoughtExperimentCard
-              isExpanded={true}
-              onExpand={() => setExpandedCard('thoughtExperiment')}
-              onCollapse={() => setExpandedCard(null)}
-            />
+            <div className={`smooth-layout ${mounted ? 'animate-slide-up' : ''}`} style={{ animationDelay: getAnimationDelay(2) }}>
+              <ThoughtExperimentCard
+                isExpanded={true}
+                onExpand={() => setExpandedCard('thoughtExperiment')}
+                onCollapse={() => setExpandedCard(null)}
+              />
+            </div>
           </>
         ) : (
           <>
             {/* Default layout: Above Ground (half or expanded), then Factle + Thought Experiment side by side */}
-            <AboveGroundCard
-              forcedQuarter={false}
-              onExpand={() => setExpandedCard('aboveGround')}
-              onCollapse={() => setExpandedCard(null)}
-            />
-            <div className="flex w-full" style={{ gap: SPACING.cardGap }}>
-              <div style={{ width: 'calc(50% - 7px)' }}>
+            <div className={`smooth-layout ${mounted ? 'animate-slide-up' : ''}`} style={{ animationDelay: getAnimationDelay(1) }}>
+              <AboveGroundCard
+                forcedQuarter={false}
+                onExpand={() => setExpandedCard('aboveGround')}
+                onCollapse={() => setExpandedCard(null)}
+              />
+            </div>
+            <div 
+              className={`flex w-full smooth-layout ${mounted ? 'animate-slide-up' : ''}`} 
+              style={{ gap: SPACING.cardGap, animationDelay: getAnimationDelay(2) }}
+            >
+              <div className="smooth-layout" style={{ width: 'calc(50% - 7px)' }}>
                 <FactleFlipCard />
               </div>
-              <div style={{ width: 'calc(50% - 7px)' }}>
+              <div className="smooth-layout" style={{ width: 'calc(50% - 7px)' }}>
                 <ThoughtExperimentCard
                   isExpanded={false}
                   onExpand={() => setExpandedCard('thoughtExperiment')}
@@ -559,31 +623,35 @@ export const Mockup = (): JSX.Element => {
         )}
 
         {/* Games - Half Images (placeholders) */}
-        <HalfImagesCard
-          category="GAMES"
-          categoryColor="#edeaff"
-          bgColor="#2c62c6"
-          placeholders
-        />
+        <div className={`smooth-layout ${mounted ? 'animate-slide-up' : ''}`} style={{ animationDelay: getAnimationDelay(3) }}>
+          <HalfImagesCard
+            category="GAMES"
+            categoryColor="#edeaff"
+            bgColor="#2c62c6"
+            placeholders
+          />
+        </div>
 
         {/* Micro History - Half Text */}
-        <HalfTextCard
-          category="MICRO HISTORY"
-          categoryColor="#e4f0cd"
-          bgColor="#c1cea9"
-          content={
-            <>
-              <span className="text-white">Why notebooks are usually lined </span>
-              <span className="text-black">
-                Early mass-produced paper varied in quality, and lines helped guide
-                handwriting when ink bled easily....
-              </span>
-            </>
-          }
-        />
+        <div className={`smooth-layout ${mounted ? 'animate-slide-up' : ''}`} style={{ animationDelay: getAnimationDelay(4) }}>
+          <HalfTextCard
+            category="MICRO HISTORY"
+            categoryColor="#e4f0cd"
+            bgColor="#c1cea9"
+            content={
+              <>
+                <span className="text-white">Why notebooks are usually lined </span>
+                <span className="text-black">
+                  Early mass-produced paper varied in quality, and lines helped guide
+                  handwriting when ink bled easily....
+                </span>
+              </>
+            }
+          />
+        </div>
 
         {/* On This Day & Word of the Day - Quarter Cards */}
-        <div className="flex w-full" style={{ gap: SPACING.cardGap }}>
+        <div className={`flex w-full smooth-layout ${mounted ? 'animate-slide-up' : ''}`} style={{ gap: SPACING.cardGap, animationDelay: getAnimationDelay(5) }}>
           <div className="flex-1">
             <QuarterTextCard
               category={
@@ -630,21 +698,23 @@ export const Mockup = (): JSX.Element => {
         </div>
 
         {/* Image Essay - Half Images */}
-        <HalfImagesCard
-          category="IMAGE ESSAY"
-          categoryColor="#83b05d"
-          bgColor="#597c3b"
-          images={[
-            "/figmaAssets/rectangle-20.png",
-            "/figmaAssets/rectangle-20.png",
-            "/figmaAssets/rectangle-20.png",
-          ]}
-        />
+        <div className={`smooth-layout ${mounted ? 'animate-slide-up' : ''}`} style={{ animationDelay: getAnimationDelay(6) }}>
+          <HalfImagesCard
+            category="IMAGE ESSAY"
+            categoryColor="#83b05d"
+            bgColor="#597c3b"
+            images={[
+              "/figmaAssets/rectangle-20.png",
+              "/figmaAssets/rectangle-20.png",
+              "/figmaAssets/rectangle-20.png",
+            ]}
+          />
+        </div>
 
         {/* Seen It All Section */}
         <section
-          className="w-full"
-          style={{ padding: SPACING.cardPadding, paddingTop: SPACING.cardPadding * 2 }}
+          className={`w-full ${mounted ? 'animate-slide-up' : ''}`}
+          style={{ padding: SPACING.cardPadding, paddingTop: SPACING.cardPadding * 2, animationDelay: getAnimationDelay(7) }}
         >
           <h2 className="font-['Sora',Helvetica] font-bold text-white text-[10px] tracking-[1px] uppercase mb-6">
             SEEN IT ALL?
@@ -660,11 +730,12 @@ export const Mockup = (): JSX.Element => {
 
         {/* Footer */}
         <footer
-          className="w-full bg-[#363636]"
+          className={`w-full bg-[#363636] ${mounted ? 'animate-slide-up' : ''}`}
           style={{
             borderRadius: SPACING.cardRadius,
             padding: SPACING.cardPadding * 2,
             marginTop: SPACING.cardGap,
+            animationDelay: getAnimationDelay(8),
           }}
         >
           <div className="font-['Satoshi-Bold',Helvetica] font-bold text-[#565656] text-xl tracking-[-0.80px] leading-relaxed">
@@ -675,5 +746,6 @@ export const Mockup = (): JSX.Element => {
         </footer>
       </div>
     </div>
+    </>
   );
 };
