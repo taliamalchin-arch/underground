@@ -55,13 +55,13 @@ const FactleFlipCard = () => {
             </div>
             {/* Back - Flipped cap with fact */}
             <div
-              className="absolute inset-0 flex items-center justify-center"
+              className="absolute inset-0 flex items-center justify-center overflow-visible"
               style={{
                 backfaceVisibility: "hidden",
                 transform: "rotateY(180deg)",
               }}
             >
-              <div className="relative w-full h-full flex items-center justify-center">
+              <div className="relative flex items-center justify-center" style={{ width: "140%", height: "140%" }}>
                 <img
                   className="w-full h-full object-contain"
                   alt="Factle Flipped"
