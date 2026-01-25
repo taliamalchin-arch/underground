@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { GamesCard } from "@/components/games/GamesCard";
 
@@ -15,6 +15,9 @@ const SPACING = {
 // Dynamic Date Header Component
 const DateHeader = () => {
   const now = new Date();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
+  const [fontSize, setFontSize] = useState(48);
   
   const month = now.toLocaleDateString('en-US', { month: 'long' });
   const day = now.getDate();
@@ -29,11 +32,36 @@ const DateHeader = () => {
   
   const dateLine = `${month} ${getOrdinal(day)}, ${year}`;
 
+  useEffect(() => {
+    const adjustFontSize = () => {
+      const container = containerRef.current;
+      const text = textRef.current;
+      if (!container || !text) return;
+
+      const containerWidth = container.offsetWidth;
+      let currentSize = 100;
+      
+      text.style.fontSize = `${currentSize}px`;
+      
+      while (text.scrollWidth > containerWidth && currentSize > 20) {
+        currentSize -= 2;
+        text.style.fontSize = `${currentSize}px`;
+      }
+      
+      setFontSize(currentSize);
+    };
+
+    adjustFontSize();
+    window.addEventListener('resize', adjustFontSize);
+    return () => window.removeEventListener('resize', adjustFontSize);
+  }, [dateLine]);
+
   return (
-    <header className="w-full py-4">
+    <header ref={containerRef} className="w-full" style={{ marginBottom: -4 }}>
       <div
-        className="font-['Satoshi-Bold',Helvetica] font-bold text-[#f7f7f7] tracking-[-0.04em] w-full"
-        style={{ fontSize: 'calc((100vw - 36px) / 11)' }}
+        ref={textRef}
+        className="font-['Satoshi-Bold',Helvetica] font-bold text-[#f7f7f7] tracking-[-0.04em] whitespace-nowrap"
+        style={{ fontSize: `${fontSize}px` }}
       >
         {dateLine}
       </div>
