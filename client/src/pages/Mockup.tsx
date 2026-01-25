@@ -153,11 +153,11 @@ const AboveGroundCard = ({
               style={{ 
                 width: 24, 
                 height: 24, 
-                backgroundColor: "rgba(0,0,0,0.1)",
+                backgroundColor: "#ffd967",
                 marginRight: 3
               }}
             >
-              <span className="font-['Sora',Helvetica] font-bold text-[10px]" style={{ color: "#feeaae" }}>×</span>
+              <span className="font-['Sora',Helvetica] font-bold text-[12px]" style={{ color: "#feeaae" }}>×</span>
             </button>
           )}
         </div>
@@ -197,15 +197,8 @@ const AboveGroundCard = ({
                 <span className="text-black text-[24px]">←</span>
               </button>
 
-              {/* Page count indicator */}
-              <div
-                className="flex flex-col items-center justify-center flex-1"
-                style={{
-                  aspectRatio: "1/1",
-                  borderRadius: SPACING.imageRadius,
-                  backgroundColor: "#ffd967",
-                }}
-              >
+              {/* Page count indicator - just text, no container */}
+              <div className="flex flex-col items-center justify-center flex-1">
                 <span
                   className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[-0.4px] leading-[16px]"
                   style={{ color: "rgba(0,0,0,0.3)" }}
@@ -353,11 +346,11 @@ const ThoughtExperimentCard = ({
               style={{ 
                 width: 24, 
                 height: 24, 
-                backgroundColor: "rgba(0,0,0,0.1)",
+                backgroundColor: "#c2b5b3",
                 marginRight: 3
               }}
             >
-              <span className="font-['Sora',Helvetica] font-bold text-[10px]" style={{ color: "#dbd3d2" }}>×</span>
+              <span className="font-['Sora',Helvetica] font-bold text-[12px]" style={{ color: "#dbd3d2" }}>×</span>
             </button>
           )}
         </div>
