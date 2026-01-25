@@ -71,19 +71,19 @@ const NEWS_ITEMS = [
 
 // Above Ground Checkin - Interactive expandable card
 const AboveGroundCard = ({
+  isExpanded,
   forcedQuarter,
   onExpand,
   onCollapse,
 }: {
+  isExpanded: boolean;
   forcedQuarter?: boolean;
   onExpand: () => void;
   onCollapse: () => void;
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // If another card forces this to quarter size, collapse it
-  const effectiveExpanded = forcedQuarter ? false : isExpanded;
+  // Quarter view when another card is expanded
   const isQuarter = forcedQuarter || false;
 
   const handlePrev = (e: React.MouseEvent) => {
@@ -98,14 +98,12 @@ const AboveGroundCard = ({
 
   const handleClose = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsExpanded(false);
     setCurrentIndex(0);
     onCollapse();
   };
 
   const handleClick = () => {
-    if (!effectiveExpanded) {
-      setIsExpanded(true);
+    if (!isExpanded) {
       onExpand();
     }
   };
@@ -115,7 +113,7 @@ const AboveGroundCard = ({
 
   // Determine aspect ratio based on state
   const getAspectRatio = () => {
-    if (effectiveExpanded) return "404/380";
+    if (isExpanded) return "404/380";
     if (isQuarter) return "195/190";
     return "404/190";
   };
@@ -146,7 +144,7 @@ const AboveGroundCard = ({
           >
             ABOVE GROUND
           </div>
-          {effectiveExpanded && (
+          {isExpanded && (
             <button
               onClick={handleClose}
               className="flex items-center justify-center rounded-full"
@@ -162,7 +160,7 @@ const AboveGroundCard = ({
           )}
         </div>
 
-        {!effectiveExpanded ? (
+        {!isExpanded ? (
           /* Collapsed state (half or quarter) */
           <div className="flex-1 flex items-end">
             <div className={`font-['Satoshi-Bold',Helvetica] font-bold text-black text-[24px] tracking-[-0.96px] leading-[26px] ${isQuarter ? 'line-clamp-4' : ''}`}>
@@ -519,6 +517,7 @@ export const Mockup = (): JSX.Element => {
             <div className="flex w-full" style={{ gap: SPACING.cardGap }}>
               <div style={{ width: 'calc(50% - 7px)' }}>
                 <AboveGroundCard
+                  isExpanded={false}
                   forcedQuarter={true}
                   onExpand={() => setExpandedCard('aboveGround')}
                   onCollapse={() => setExpandedCard(null)}
@@ -539,6 +538,7 @@ export const Mockup = (): JSX.Element => {
           <>
             {/* Default layout: Above Ground (half or expanded), then Factle + Thought Experiment side by side */}
             <AboveGroundCard
+              isExpanded={isAboveGroundExpanded}
               forcedQuarter={false}
               onExpand={() => setExpandedCard('aboveGround')}
               onCollapse={() => setExpandedCard(null)}
