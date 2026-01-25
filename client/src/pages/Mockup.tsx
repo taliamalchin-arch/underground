@@ -237,11 +237,11 @@ const FactleFlipCard = () => {
         aspectRatio: "195/190",
         borderRadius: SPACING.cardRadius,
         padding: SPACING.cardPadding,
-        backgroundColor: "#f6afe9",
+        backgroundColor: "#2C63C7",
       }}
     >
       <CardContent className="p-0 w-full flex flex-col h-full gap-[6px]">
-        <div className="font-['Sora',Helvetica] font-bold text-[#f8e5f4] text-[10px] tracking-[1px] uppercase h-[17px] whitespace-nowrap overflow-hidden">
+        <div className="font-['Sora',Helvetica] font-bold text-[#7a9fe0] text-[10px] tracking-[1px] uppercase h-[17px] whitespace-nowrap overflow-hidden">
           FACTLE
         </div>
         {/* Flip container - only the cap flips */}
@@ -561,8 +561,8 @@ export const Mockup = (): JSX.Element => {
         {/* Games - Half Images (placeholders) */}
         <HalfImagesCard
           category="GAMES"
-          categoryColor="#edeaff"
-          bgColor="#2c62c6"
+          categoryColor="#fce8f8"
+          bgColor="#F6AFE9"
           placeholders
         />
 
