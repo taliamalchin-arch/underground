@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { GamesCard } from "@/components/games/GamesCard";
 
 // Design System Constants
 const SPACING = {
@@ -492,11 +493,12 @@ const HalfImagesCard = ({
 );
 
 export const Mockup = (): JSX.Element => {
-  // Global expand state: null = none expanded, 'aboveGround' = Above Ground expanded, 'thoughtExperiment' = Thought Experiment expanded
+  // Global expand state: null = none expanded, 'aboveGround' = Above Ground expanded, 'thoughtExperiment' = Thought Experiment expanded, 'games' = Games expanded
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
   const isThoughtExperimentExpanded = expandedCard === 'thoughtExperiment';
   const isAboveGroundExpanded = expandedCard === 'aboveGround';
+  const isGamesExpanded = expandedCard === 'games';
 
   return (
     <div className="bg-[#2f2f2f] min-h-screen w-full flex justify-center">
@@ -558,12 +560,11 @@ export const Mockup = (): JSX.Element => {
           </>
         )}
 
-        {/* Games - Half Images (placeholders) */}
-        <HalfImagesCard
-          category="GAMES"
-          categoryColor="#fce8f8"
-          bgColor="#F6AFE9"
-          placeholders
+        {/* Games - Interactive Module */}
+        <GamesCard
+          isExpanded={isGamesExpanded}
+          onExpand={() => setExpandedCard('games')}
+          onCollapse={() => setExpandedCard(null)}
         />
 
         {/* Micro History - Half Text */}
