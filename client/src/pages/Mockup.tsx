@@ -31,8 +31,8 @@ const DateHeader = () => {
   return (
     <header className="w-full py-4">
       <div
-        className="font-['Satoshi-Bold',Helvetica] font-bold text-[#f7f7f7] tracking-[-0.04em] w-full whitespace-nowrap"
-        style={{ fontSize: '11vw' }}
+        className="font-['Satoshi-Bold',Helvetica] font-bold text-[#f7f7f7] tracking-[-0.04em] w-full"
+        style={{ fontSize: 'calc((100vw - 36px) / 11)' }}
       >
         {dateLine}
       </div>
