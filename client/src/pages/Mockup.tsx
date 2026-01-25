@@ -15,32 +15,37 @@ const FactleFlipCard = () => {
   const [isFlipped, setIsFlipped] = useState(false);
 
   return (
-    <div
-      className="w-full cursor-pointer"
-      style={{ perspective: "1000px", aspectRatio: "195/190" }}
-      onClick={() => setIsFlipped(!isFlipped)}
+    <Card
+      className="w-full border-0 flex flex-col"
+      style={{
+        aspectRatio: "195/190",
+        borderRadius: SPACING.cardRadius,
+        padding: SPACING.cardPadding,
+        backgroundColor: "#f6afe9",
+      }}
     >
-      <div
-        className="relative w-full h-full transition-transform duration-500"
-        style={{
-          transformStyle: "preserve-3d",
-          transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
-        }}
-      >
-        {/* Front */}
-        <Card
-          className="absolute inset-0 bg-[#f6afe9] border-0 flex flex-col"
-          style={{
-            borderRadius: SPACING.cardRadius,
-            padding: SPACING.cardPadding,
-            backfaceVisibility: "hidden",
-          }}
+      <CardContent className="p-0 w-full flex flex-col h-full gap-[6px]">
+        <div className="font-['Sora',Helvetica] font-bold text-[#f8e5f4] text-[10px] tracking-[1px] uppercase h-[17px]">
+          FACTLE
+        </div>
+        {/* Flip container - only the cap flips */}
+        <div
+          className="flex-1 w-full cursor-pointer"
+          style={{ perspective: "1000px" }}
+          onClick={() => setIsFlipped(!isFlipped)}
         >
-          <CardContent className="p-0 w-full flex flex-col h-full gap-[6px]">
-            <div className="font-['Sora',Helvetica] font-bold text-[#f8e5f4] text-[10px] tracking-[1px] uppercase h-[17px]">
-              FACTLE
-            </div>
-            <div className="flex-1 w-full" style={{ borderRadius: SPACING.imageRadius }}>
+          <div
+            className="relative w-full h-full transition-transform duration-500"
+            style={{
+              transformStyle: "preserve-3d",
+              transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+            }}
+          >
+            {/* Front - Cap image */}
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ backfaceVisibility: "hidden" }}
+            >
               <img
                 className="w-full h-full object-contain"
                 alt="Factle"
@@ -48,36 +53,35 @@ const FactleFlipCard = () => {
                 style={{ borderRadius: SPACING.imageRadius }}
               />
             </div>
-          </CardContent>
-        </Card>
-        {/* Back */}
-        <Card
-          className="absolute inset-0 bg-[#f6afe9] border-0 flex flex-col items-center justify-center"
-          style={{
-            borderRadius: SPACING.cardRadius,
-            padding: SPACING.cardPadding,
-            backfaceVisibility: "hidden",
-            transform: "rotateY(180deg)",
-          }}
-        >
-          <CardContent className="p-0 w-full h-full flex items-center justify-center relative">
-            <img
-              className="absolute inset-0 w-full h-full object-contain"
-              alt="Factle Flipped"
-              src="/figmaAssets/factle-flipped.png"
-            />
-            <div className="relative z-10 flex flex-col items-center text-center mt-4">
-              <p className="font-['Satoshi-Bold',Helvetica] font-bold text-black text-[11px] tracking-[-0.44px] leading-[12px]">
-                Sharks are older than trees
-              </p>
-              <p className="font-['Satoshi-Bold',Helvetica] font-bold text-black text-[5px] tracking-[-0.2px] mt-1">
-                FACTLE
-              </p>
+            {/* Back - Flipped cap with fact */}
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{
+                backfaceVisibility: "hidden",
+                transform: "rotateY(180deg)",
+              }}
+            >
+              <div className="relative w-full h-full flex items-center justify-center">
+                <img
+                  className="w-full h-full object-contain"
+                  alt="Factle Flipped"
+                  src="/figmaAssets/factle-flipped.png"
+                  style={{ borderRadius: SPACING.imageRadius }}
+                />
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-[25%] pt-2">
+                  <p className="font-['Satoshi-Bold',Helvetica] font-bold text-black text-[9px] tracking-[-0.3px] leading-[11px] max-w-[60px]">
+                    Sharks are older than trees
+                  </p>
+                  <p className="font-['Satoshi-Bold',Helvetica] font-bold text-black text-[5px] tracking-[-0.2px] mt-1">
+                    FACTLE
+                  </p>
+                </div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
