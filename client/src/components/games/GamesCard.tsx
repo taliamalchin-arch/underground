@@ -115,11 +115,13 @@ export const GamesCard = ({
             ))}
           </div>
         ) : (
-          <div className="flex-1 flex flex-col mt-2 relative">
+          <div className="flex-1 flex flex-row mt-2" style={{ gap: 14 }}>
             <div 
-              className="flex-1 rounded-[16px] relative overflow-hidden"
+              className="rounded-[24px] relative overflow-hidden"
               style={{
-                background: 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(246,175,233,0.4) 100%)',
+                width: 313,
+                height: 308,
+                background: 'linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%)',
               }}
             >
               {!isPlaying ? (
@@ -137,23 +139,25 @@ export const GamesCard = ({
                   </button>
                 </div>
               ) : (
-                <GameComponent isPlaying={isPlaying} />
+                <GameComponent isPlaying={isPlaying} onGameOver={() => setIsPlaying(false)} />
               )}
             </div>
             
-            <button
-              data-testid="next-game-button"
-              onClick={handleNext}
-              className="absolute bottom-0 right-0 flex items-center justify-center"
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                backgroundColor: "#f8d4f0",
-              }}
-            >
-              <span className="text-[#fce8f8] text-xl">→</span>
-            </button>
+            <div className="flex flex-col justify-end">
+              <button
+                data-testid="next-game-button"
+                onClick={handleNext}
+                className="flex items-center justify-center"
+                style={{
+                  width: 45,
+                  height: 45,
+                  borderRadius: 24,
+                  backgroundColor: "#ffc1f4",
+                }}
+              >
+                <span className="text-[#ffe2fa] text-xl font-bold">→</span>
+              </button>
+            </div>
           </div>
         )}
       </CardContent>

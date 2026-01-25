@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type MouseEvent, type TouchEvent } from 'react';
 
 interface ReflexTapProps {
   isPlaying: boolean;
@@ -67,12 +67,9 @@ export const ReflexTap = ({ isPlaying, onGameOver }: ReflexTapProps) => {
     };
   }, []);
 
-  const handleTap = (e: React.MouseEvent | React.TouchEvent) => {
+  const handleTap = (e: MouseEvent | TouchEvent) => {
     e.preventDefault();
-    if (!gameActive) {
-      startGame();
-      return;
-    }
+    if (!gameActive || message) return;
     
     if (targetVisible) {
       setScore(s => s + 1);
@@ -80,6 +77,11 @@ export const ReflexTap = ({ isPlaying, onGameOver }: ReflexTapProps) => {
       if (targetTimerRef.current) clearTimeout(targetTimerRef.current);
       setTimeout(showNewTarget, 200);
     }
+  };
+
+  const handleTryAgain = () => {
+    setMessage('');
+    startGame();
   };
 
   if (!isPlaying) return null;
@@ -119,9 +121,14 @@ export const ReflexTap = ({ isPlaying, onGameOver }: ReflexTapProps) => {
           <div className="font-['Satoshi-Bold'] text-xl text-black mb-2">
             {message}
           </div>
-          <div className="font-['Sora'] text-xs text-pink-400 mt-2">
-            Tap to play again
-          </div>
+          <button
+            data-testid="try-again-button"
+            onClick={handleTryAgain}
+            className="mt-4 px-6 py-2 rounded-full font-['Sora'] font-bold text-sm text-white shadow-lg"
+            style={{ backgroundColor: "#F6AFE9" }}
+          >
+            TRY AGAIN
+          </button>
         </div>
       )}
       

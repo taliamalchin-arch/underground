@@ -283,11 +283,7 @@ export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
   }, []);
 
   const handleTouch = useCallback((e: TouchEvent<HTMLCanvasElement> | MouseEvent<HTMLCanvasElement>) => {
-    if (gameOver) {
-      resetGame();
-      gameLoopRef.current = requestAnimationFrame(gameLoop);
-      return;
-    }
+    if (gameOver) return;
     
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -311,18 +307,39 @@ export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
       keysRef.current.add('ArrowRight');
       setTimeout(() => keysRef.current.delete('ArrowRight'), 100);
     }
-  }, [gameOver, resetGame, gameLoop]);
+  }, [gameOver]);
+
+  const handleTryAgain = useCallback(() => {
+    resetGame();
+    gameLoopRef.current = requestAnimationFrame(gameLoop);
+  }, [resetGame, gameLoop]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      data-testid="ski-game-canvas"
-      width={300}
-      height={280}
-      className="w-full h-full rounded-[16px]"
-      style={{ touchAction: 'none' }}
-      onTouchStart={handleTouch}
-      onMouseDown={handleTouch}
-    />
+    <div className="relative w-full h-full">
+      <canvas
+        ref={canvasRef}
+        data-testid="ski-game-canvas"
+        width={313}
+        height={308}
+        className="w-full h-full rounded-[24px]"
+        style={{ touchAction: 'none' }}
+        onTouchStart={handleTouch}
+        onMouseDown={handleTouch}
+      />
+      {gameOver && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 rounded-[24px]">
+          <div className="font-['Satoshi-Bold'] text-2xl text-white mb-2">Game Over!</div>
+          <div className="font-['Sora'] text-sm text-white mb-4">Score: {skierRef.current.distance}</div>
+          <button
+            data-testid="try-again-button"
+            onClick={handleTryAgain}
+            className="px-6 py-2 rounded-full font-['Sora'] font-bold text-sm text-white shadow-lg"
+            style={{ backgroundColor: "#F6AFE9" }}
+          >
+            TRY AGAIN
+          </button>
+        </div>
+      )}
+    </div>
   );
 };
