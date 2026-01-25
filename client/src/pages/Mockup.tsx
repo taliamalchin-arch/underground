@@ -70,9 +70,21 @@ const NEWS_ITEMS = [
 ];
 
 // Above Ground Checkin - Interactive expandable card
-const AboveGroundCard = () => {
+const AboveGroundCard = ({
+  forcedQuarter,
+  onExpand,
+  onCollapse,
+}: {
+  forcedQuarter?: boolean;
+  onExpand: () => void;
+  onCollapse: () => void;
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  // If another card forces this to quarter size, collapse it
+  const effectiveExpanded = forcedQuarter ? false : isExpanded;
+  const isQuarter = forcedQuarter || false;
 
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -88,21 +100,42 @@ const AboveGroundCard = () => {
     e.stopPropagation();
     setIsExpanded(false);
     setCurrentIndex(0);
+    onCollapse();
+  };
+
+  const handleClick = () => {
+    if (!effectiveExpanded && !forcedQuarter) {
+      setIsExpanded(true);
+      onExpand();
+    }
   };
 
   const currentNews = NEWS_ITEMS[currentIndex];
   const pageDisplay = `${String(currentIndex + 1).padStart(2, '0')} / ${String(NEWS_ITEMS.length).padStart(2, '0')}`;
 
+  // Determine aspect ratio based on state
+  const getAspectRatio = () => {
+    if (effectiveExpanded) return "404/380";
+    if (isQuarter) return "195/190";
+    return "404/190";
+  };
+
+  // Text content based on size
+  const getCollapsedText = () => {
+    if (isQuarter) return "What everyone is talking about on this beaut...";
+    return "What everyone is talking about on this beautiful Tuesday";
+  };
+
   return (
     <Card
       className="w-full border-0 flex flex-col cursor-pointer transition-all duration-300"
       style={{
-        aspectRatio: isExpanded ? "404/380" : "404/190",
+        aspectRatio: getAspectRatio(),
         borderRadius: SPACING.cardRadius,
         padding: SPACING.cardPadding,
         backgroundColor: "#f4ca5b",
       }}
-      onClick={() => !isExpanded && setIsExpanded(true)}
+      onClick={handleClick}
     >
       <CardContent className="p-0 w-full h-full flex flex-col">
         {/* Category label - always visible */}
@@ -113,11 +146,11 @@ const AboveGroundCard = () => {
           ABOVE GROUND CHECKIN
         </div>
 
-        {!isExpanded ? (
-          /* Collapsed state */
+        {!effectiveExpanded ? (
+          /* Collapsed state (half or quarter) */
           <div className="flex-1 flex items-end">
             <div className="font-['Satoshi-Bold',Helvetica] font-bold text-black text-[24px] tracking-[-0.96px] leading-[26px]">
-              What everyone is talking about on this beautiful Tuesday
+              {getCollapsedText()}
             </div>
           </div>
         ) : (
@@ -269,15 +302,22 @@ const FactleFlipCard = () => {
   );
 };
 
-// Thought Experiment Card - Expandable
-const ThoughtExperimentCard = () => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
+// Thought Experiment Card - Expandable (receives props from parent)
+const ThoughtExperimentCard = ({
+  isExpanded,
+  onExpand,
+  onCollapse,
+}: {
+  isExpanded: boolean;
+  onExpand: () => void;
+  onCollapse: () => void;
+}) => {
   const fullText = "Imagine a world where every object slowly changes shape when no one is looking, but returns to normal the moment it's observed. Nothing ever breaks or malfunctions — it's simply different when unseen. Would the unseen version of the world feel less real, or more honest?";
+  const truncatedText = "Imagine a world where every object slowly chan...";
 
   const handleClose = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsExpanded(false);
+    onCollapse();
   };
 
   return (
@@ -289,7 +329,7 @@ const ThoughtExperimentCard = () => {
         padding: SPACING.cardPadding,
         backgroundColor: "#b9acaa",
       }}
-      onClick={() => !isExpanded && setIsExpanded(true)}
+      onClick={() => !isExpanded && onExpand()}
     >
       <CardContent className="p-0 w-full h-full flex flex-col justify-between">
         {/* Category label with close button when expanded */}
@@ -312,7 +352,7 @@ const ThoughtExperimentCard = () => {
         </div>
         
         <div className="font-['Satoshi-Bold',Helvetica] font-bold text-black text-[24px] tracking-[-0.96px] leading-[26px] overflow-hidden">
-          {isExpanded ? fullText : "Imagine a world where every object slowly changes shape when no one is looking, but returns to normal the moment it's observed."}
+          {isExpanded ? fullText : truncatedText}
         </div>
       </CardContent>
     </Card>
@@ -450,6 +490,12 @@ const HalfImagesCard = ({
 );
 
 export const Mockup = (): JSX.Element => {
+  // Global expand state: null = none expanded, 'aboveGround' = Above Ground expanded, 'thoughtExperiment' = Thought Experiment expanded
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
+
+  const isThoughtExperimentExpanded = expandedCard === 'thoughtExperiment';
+  const isAboveGroundExpanded = expandedCard === 'aboveGround';
+
   return (
     <div className="bg-[#2f2f2f] min-h-screen w-full flex justify-center">
       <div
@@ -462,18 +508,51 @@ export const Mockup = (): JSX.Element => {
         {/* Header - Dynamic Date */}
         <DateHeader />
 
-        {/* Above Ground Checkin - Interactive expandable card */}
-        <AboveGroundCard />
-
-        {/* Factle & Thought Experiment - Quarter Cards */}
-        <div className="flex w-full" style={{ gap: SPACING.cardGap }}>
-          <div className="flex-1">
-            <FactleFlipCard />
-          </div>
-          <div className="flex-1">
-            <ThoughtExperimentCard />
-          </div>
-        </div>
+        {/* Layout changes based on which card is expanded */}
+        {isThoughtExperimentExpanded ? (
+          <>
+            {/* When Thought Experiment is expanded: Above Ground (quarter) + Factle (quarter) side by side */}
+            <div className="flex w-full" style={{ gap: SPACING.cardGap }}>
+              <div className="flex-1">
+                <AboveGroundCard
+                  forcedQuarter={true}
+                  onExpand={() => setExpandedCard('aboveGround')}
+                  onCollapse={() => setExpandedCard(null)}
+                />
+              </div>
+              <div className="flex-1">
+                <FactleFlipCard />
+              </div>
+            </div>
+            {/* Thought Experiment expanded to full width */}
+            <ThoughtExperimentCard
+              isExpanded={true}
+              onExpand={() => setExpandedCard('thoughtExperiment')}
+              onCollapse={() => setExpandedCard(null)}
+            />
+          </>
+        ) : (
+          <>
+            {/* Default layout: Above Ground (half or expanded), then Factle + Thought Experiment side by side */}
+            <AboveGroundCard
+              forcedQuarter={false}
+              onExpand={() => setExpandedCard('aboveGround')}
+              onCollapse={() => setExpandedCard(null)}
+            />
+            <div className="flex w-full" style={{ gap: SPACING.cardGap }}>
+              <div className="flex-1">
+                <FactleFlipCard />
+              </div>
+              <div className="flex-1">
+                <ThoughtExperimentCard
+                  isExpanded={false}
+                  onExpand={() => setExpandedCard('thoughtExperiment')}
+                  onCollapse={() => setExpandedCard(null)}
+                />
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Games - Half Images (placeholders) */}
         <HalfImagesCard
