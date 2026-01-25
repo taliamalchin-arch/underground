@@ -11,6 +11,42 @@ const SPACING = {
   containerPadding: 18,
 };
 
+// Dynamic Date Header Component
+const DateHeader = () => {
+  const now = new Date();
+  
+  const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' });
+  const month = now.toLocaleDateString('en-US', { month: 'long' });
+  const day = now.getDate();
+  const year = now.getFullYear();
+  
+  // Add ordinal suffix
+  const getOrdinal = (n: number) => {
+    const s = ["th", "st", "nd", "rd"];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  };
+  
+  const dateLine = `${month} ${getOrdinal(day)}, ${year}`;
+
+  return (
+    <header className="w-full py-4 flex flex-col" style={{ lineHeight: 0.85 }}>
+      <div
+        className="font-['Satoshi-Bold',Helvetica] font-bold text-[#f7f7f7] tracking-[-0.04em] w-full"
+        style={{ fontSize: 'clamp(32px, 15vw, 90px)' }}
+      >
+        {dayOfWeek}
+      </div>
+      <div
+        className="font-['Satoshi-Bold',Helvetica] font-bold text-[#f7f7f7] tracking-[-0.04em] w-full"
+        style={{ fontSize: 'clamp(24px, 10vw, 60px)' }}
+      >
+        {dateLine}
+      </div>
+    </header>
+  );
+};
+
 // News data for Above Ground module
 const NEWS_ITEMS = [
   {
@@ -364,10 +400,8 @@ export const Mockup = (): JSX.Element => {
           gap: SPACING.cardGap,
         }}
       >
-        {/* Header */}
-        <header className="font-['Satoshi-Bold',Helvetica] font-bold text-[#f7f7f7] text-[50px] tracking-[-2px] leading-tight text-center py-6">
-          January 20, 2026
-        </header>
+        {/* Header - Dynamic Date */}
+        <DateHeader />
 
         {/* Above Ground Checkin - Interactive expandable card */}
         <AboveGroundCard />
