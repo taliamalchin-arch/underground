@@ -11,6 +11,145 @@ const SPACING = {
   containerPadding: 18,
 };
 
+// News data for Above Ground module
+const NEWS_ITEMS = [
+  {
+    headline: "OpenAI's Sora video model finally dropped",
+    description: "The text-to-video tool generated immediate hype and concern. Early tests show impressive results, but discourse quickly shifted to implications for film industry jobs and AI-generated misinformation.",
+    source: "OpenAI / X",
+  },
+  {
+    headline: "Barbie got snubbed at the Oscars for Best Director",
+    description: "Greta Gerwig's omission from the Best Director category sparked immediate backlash. The irony wasn't lost on anyone given the film's themes about women being overlooked.",
+    source: "Academy / Variety",
+  },
+  {
+    headline: "Reddit's API changes killed third-party apps",
+    description: "Apollo, RIF, and other beloved apps shut down after Reddit imposed unsustainable pricing. Moderators staged blackouts in protest, and thousands migrated to alternatives.",
+    source: "Reddit / The Verge",
+  },
+  {
+    headline: "Taylor Swift and Travis Kelce dominated everything",
+    description: "The relationship turned NFL games into cultural events. Camera cuts to Swift in the stands became a meme format, and think pieces about the crossover audience flooded timelines.",
+    source: "X / ESPN",
+  },
+  {
+    headline: "ChatGPT's voice mode felt uncomfortably human",
+    description: "The new Advanced Voice feature sparked conversations about parasocial AI relationships. Users reported feeling genuinely attached to the conversational quality.",
+    source: "OpenAI / X",
+  },
+];
+
+// Above Ground Checkin - Interactive expandable card
+const AboveGroundCard = () => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const handlePrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : NEWS_ITEMS.length - 1));
+  };
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev < NEWS_ITEMS.length - 1 ? prev + 1 : 0));
+  };
+
+  const handleClose = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsExpanded(false);
+    setCurrentIndex(0);
+  };
+
+  const currentNews = NEWS_ITEMS[currentIndex];
+
+  return (
+    <Card
+      className="w-full border-0 flex flex-col cursor-pointer transition-all duration-300"
+      style={{
+        aspectRatio: isExpanded ? "404/380" : "404/190",
+        borderRadius: SPACING.cardRadius,
+        padding: SPACING.cardPadding,
+        backgroundColor: "#f4ca5b",
+      }}
+      onClick={() => !isExpanded && setIsExpanded(true)}
+    >
+      <CardContent className="p-0 w-full h-full flex flex-col">
+        {/* Category label - always visible */}
+        <div
+          className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase h-[17px] mb-2"
+          style={{ color: "#faf5e9" }}
+        >
+          ABOVE GROUND CHECKIN
+        </div>
+
+        {!isExpanded ? (
+          /* Collapsed state */
+          <div className="flex-1 flex items-end">
+            <div className="font-['Satoshi-Bold',Helvetica] font-bold text-black text-[24px] tracking-[-0.96px] leading-[26px]">
+              What everyone is talking about on this beautiful Tuesday
+            </div>
+          </div>
+        ) : (
+          /* Expanded state */
+          <div className="flex-1 flex flex-col justify-between">
+            {/* News content card */}
+            <div
+              className="bg-[#faf5e9] flex-1 flex flex-col justify-between"
+              style={{
+                borderRadius: SPACING.imageRadius,
+                padding: SPACING.cardPadding,
+              }}
+            >
+              <div>
+                <h3 className="font-['Satoshi-Bold',Helvetica] font-bold text-black text-[20px] tracking-[-0.5px] leading-[24px] mb-3">
+                  {currentNews.headline}
+                </h3>
+                <p className="font-['Satoshi-Regular',Helvetica] text-black text-[15px] leading-[22px] mb-3">
+                  {currentNews.description}
+                </p>
+                <p className="font-['Satoshi-Regular',Helvetica] text-[#a89a6b] text-[14px]">
+                  {currentNews.source}
+                </p>
+              </div>
+            </div>
+
+            {/* Navigation */}
+            <div className="flex items-center justify-between mt-4">
+              <button
+                onClick={handlePrev}
+                className="bg-[#faf5e9] px-4 py-2 font-['Satoshi-Bold',Helvetica] font-bold text-black text-[14px]"
+                style={{ borderRadius: SPACING.imageRadius }}
+              >
+                ← Prev
+              </button>
+              <span className="font-['Satoshi-Regular',Helvetica] text-black text-[14px]">
+                {currentIndex + 1} / {NEWS_ITEMS.length}
+              </span>
+              <button
+                onClick={handleNext}
+                className="bg-[#faf5e9] px-4 py-2 font-['Satoshi-Bold',Helvetica] font-bold text-black text-[14px]"
+                style={{ borderRadius: SPACING.imageRadius }}
+              >
+                Next →
+              </button>
+            </div>
+
+            {/* Close button */}
+            <button
+              onClick={handleClose}
+              className="w-full bg-[#d4a84b] py-3 mt-3 font-['Satoshi-Bold',Helvetica] font-bold text-black text-[16px]"
+              style={{ borderRadius: SPACING.imageRadius }}
+            >
+              Close
+            </button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
 const FactleFlipCard = () => {
   const [isFlipped, setIsFlipped] = useState(false);
 
@@ -230,17 +369,8 @@ export const Mockup = (): JSX.Element => {
           January 20, 2026
         </header>
 
-        {/* Above Ground Checkin - Half Text */}
-        <HalfTextCard
-          category="ABOVE GROUND CHECKIN"
-          categoryColor="#faf5e9"
-          bgColor="#f4ca5b"
-          content={
-            <span className="text-black">
-              What everyone is talking about on this beautiful Tuesday
-            </span>
-          }
-        />
+        {/* Above Ground Checkin - Interactive expandable card */}
+        <AboveGroundCard />
 
         {/* Factle & Thought Experiment - Quarter Cards */}
         <div className="flex w-full" style={{ gap: SPACING.cardGap }}>
