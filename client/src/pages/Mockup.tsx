@@ -104,7 +104,7 @@ const AboveGroundCard = ({
   };
 
   const handleClick = () => {
-    if (!effectiveExpanded && !forcedQuarter) {
+    if (!effectiveExpanded) {
       setIsExpanded(true);
       onExpand();
     }
@@ -144,15 +144,20 @@ const AboveGroundCard = ({
             className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase whitespace-nowrap overflow-hidden"
             style={{ color: "#feeaae" }}
           >
-            ABOVE GROUND CHECKIN
+            ABOVE GROUND
           </div>
           {effectiveExpanded && (
             <button
               onClick={handleClose}
-              className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase"
-              style={{ color: "#feeaae", marginRight: 3 }}
+              className="flex items-center justify-center rounded-full"
+              style={{ 
+                width: 24, 
+                height: 24, 
+                backgroundColor: "rgba(0,0,0,0.1)",
+                marginRight: 3
+              }}
             >
-              X
+              <span className="font-['Sora',Helvetica] font-bold text-[10px]" style={{ color: "#feeaae" }}>×</span>
             </button>
           )}
         </div>
@@ -160,7 +165,7 @@ const AboveGroundCard = ({
         {!effectiveExpanded ? (
           /* Collapsed state (half or quarter) */
           <div className="flex-1 flex items-end">
-            <div className="font-['Satoshi-Bold',Helvetica] font-bold text-black text-[24px] tracking-[-0.96px] leading-[26px]">
+            <div className={`font-['Satoshi-Bold',Helvetica] font-bold text-black text-[24px] tracking-[-0.96px] leading-[26px] ${isQuarter ? 'line-clamp-4' : ''}`}>
               {getCollapsedText()}
             </div>
           </div>
@@ -344,10 +349,15 @@ const ThoughtExperimentCard = ({
           {isExpanded && (
             <button
               onClick={handleClose}
-              className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase"
-              style={{ color: "#dbd3d2", marginRight: 3 }}
+              className="flex items-center justify-center rounded-full"
+              style={{ 
+                width: 24, 
+                height: 24, 
+                backgroundColor: "rgba(0,0,0,0.1)",
+                marginRight: 3
+              }}
             >
-              X
+              <span className="font-['Sora',Helvetica] font-bold text-[10px]" style={{ color: "#dbd3d2" }}>×</span>
             </button>
           )}
         </div>
