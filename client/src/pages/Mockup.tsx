@@ -91,6 +91,7 @@ const AboveGroundCard = () => {
   };
 
   const currentNews = NEWS_ITEMS[currentIndex];
+  const pageDisplay = `${String(currentIndex + 1).padStart(2, '0')} / ${String(NEWS_ITEMS.length).padStart(2, '0')}`;
 
   return (
     <Card
@@ -106,8 +107,8 @@ const AboveGroundCard = () => {
       <CardContent className="p-0 w-full h-full flex flex-col">
         {/* Category label - always visible */}
         <div
-          className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase h-[17px] mb-2"
-          style={{ color: "#faf5e9" }}
+          className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase h-[17px]"
+          style={{ color: "#feeaae" }}
         >
           ABOVE GROUND CHECKIN
         </div>
@@ -121,57 +122,72 @@ const AboveGroundCard = () => {
           </div>
         ) : (
           /* Expanded state */
-          <div className="flex-1 flex flex-col justify-between">
-            {/* News content card */}
-            <div
-              className="bg-[#faf5e9] flex-1 flex flex-col justify-between"
-              style={{
-                borderRadius: SPACING.imageRadius,
-                padding: SPACING.cardPadding,
-              }}
-            >
-              <div>
-                <h3 className="font-['Satoshi-Bold',Helvetica] font-bold text-black text-[20px] tracking-[-0.5px] leading-[24px] mb-3">
-                  {currentNews.headline}
-                </h3>
-                <p className="font-['Satoshi-Regular',Helvetica] text-black text-[15px] leading-[22px] mb-3">
-                  {currentNews.description}
-                </p>
-                <p className="font-['Satoshi-Regular',Helvetica] text-[#a89a6b] text-[14px]">
-                  {currentNews.source}
-                </p>
-              </div>
+          <div className="flex-1 flex flex-col justify-between mt-2">
+            {/* Headline - small text */}
+            <div className="font-['Sora',Helvetica] font-bold text-black text-[10px] tracking-[-0.4px] leading-[16px]">
+              {currentNews.headline}
             </div>
 
-            {/* Navigation */}
-            <div className="flex items-center justify-between mt-4">
+            {/* Description - large text */}
+            <div className="font-['Satoshi-Bold',Helvetica] font-bold text-black text-[24px] tracking-[-0.96px] leading-[26px] flex-1 flex items-end pb-4">
+              {currentNews.description}
+            </div>
+
+            {/* Navigation buttons */}
+            <div className="flex items-end justify-between gap-[9px]">
+              {/* Prev button */}
               <button
                 onClick={handlePrev}
-                className="bg-[#faf5e9] px-4 py-2 font-['Satoshi-Bold',Helvetica] font-bold text-black text-[14px]"
-                style={{ borderRadius: SPACING.imageRadius }}
+                className="flex items-center justify-center"
+                style={{
+                  width: 116,
+                  height: 116,
+                  borderRadius: SPACING.imageRadius,
+                  backgroundColor: "#ffd967",
+                }}
               >
-                ← Prev
+                <span className="text-black text-[24px]">←</span>
               </button>
-              <span className="font-['Satoshi-Regular',Helvetica] text-black text-[14px]">
-                {currentIndex + 1} / {NEWS_ITEMS.length}
-              </span>
+
+              {/* Close button with page count */}
+              <button
+                onClick={handleClose}
+                className="flex flex-col items-center justify-end pb-4"
+                style={{
+                  width: 116,
+                  height: 116,
+                  borderRadius: SPACING.imageRadius,
+                  backgroundColor: "#ffd967",
+                }}
+              >
+                <span
+                  className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[-0.4px] leading-[16px] mb-2"
+                  style={{ color: "#d9ae2f" }}
+                >
+                  {pageDisplay}
+                </span>
+                <span
+                  className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase"
+                  style={{ color: "#d9ae2f" }}
+                >
+                  CLOSE
+                </span>
+              </button>
+
+              {/* Next button */}
               <button
                 onClick={handleNext}
-                className="bg-[#faf5e9] px-4 py-2 font-['Satoshi-Bold',Helvetica] font-bold text-black text-[14px]"
-                style={{ borderRadius: SPACING.imageRadius }}
+                className="flex items-center justify-center"
+                style={{
+                  width: 116,
+                  height: 116,
+                  borderRadius: SPACING.imageRadius,
+                  backgroundColor: "#ffd967",
+                }}
               >
-                Next →
+                <span className="text-black text-[24px]">→</span>
               </button>
             </div>
-
-            {/* Close button */}
-            <button
-              onClick={handleClose}
-              className="w-full bg-[#d4a84b] py-3 mt-3 font-['Satoshi-Bold',Helvetica] font-bold text-black text-[16px]"
-              style={{ borderRadius: SPACING.imageRadius }}
-            >
-              Close
-            </button>
           </div>
         )}
       </CardContent>
