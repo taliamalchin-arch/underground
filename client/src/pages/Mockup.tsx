@@ -15,7 +15,6 @@ const SPACING = {
 const DateHeader = () => {
   const now = new Date();
   
-  const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' });
   const month = now.toLocaleDateString('en-US', { month: 'long' });
   const day = now.getDate();
   const year = now.getFullYear();
@@ -30,16 +29,10 @@ const DateHeader = () => {
   const dateLine = `${month} ${getOrdinal(day)}, ${year}`;
 
   return (
-    <header className="w-full py-4 flex flex-col" style={{ lineHeight: 0.85 }}>
+    <header className="w-full py-4">
       <div
-        className="font-['Satoshi-Bold',Helvetica] font-bold text-[#f7f7f7] tracking-[-0.04em] w-full"
-        style={{ fontSize: 'clamp(32px, 15vw, 90px)' }}
-      >
-        {dayOfWeek}
-      </div>
-      <div
-        className="font-['Satoshi-Bold',Helvetica] font-bold text-[#f7f7f7] tracking-[-0.04em] w-full"
-        style={{ fontSize: 'clamp(24px, 10vw, 60px)' }}
+        className="font-['Satoshi-Bold',Helvetica] font-bold text-[#f7f7f7] tracking-[-0.04em] w-full whitespace-nowrap"
+        style={{ fontSize: '11vw' }}
       >
         {dateLine}
       </div>
