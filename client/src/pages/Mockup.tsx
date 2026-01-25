@@ -138,12 +138,23 @@ const AboveGroundCard = ({
       onClick={handleClick}
     >
       <CardContent className="p-0 w-full h-full flex flex-col">
-        {/* Category label - always visible */}
-        <div
-          className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase h-[17px] whitespace-nowrap overflow-hidden"
-          style={{ color: "#feeaae" }}
-        >
-          ABOVE GROUND CHECKIN
+        {/* Category label with X when expanded */}
+        <div className="flex items-center justify-between h-[17px]">
+          <div
+            className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase whitespace-nowrap overflow-hidden"
+            style={{ color: "#feeaae" }}
+          >
+            ABOVE GROUND CHECKIN
+          </div>
+          {effectiveExpanded && (
+            <button
+              onClick={handleClose}
+              className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase"
+              style={{ color: "#feeaae", marginRight: 3 }}
+            >
+              X
+            </button>
+          )}
         </div>
 
         {!effectiveExpanded ? (
@@ -171,10 +182,9 @@ const AboveGroundCard = ({
               {/* Prev button */}
               <button
                 onClick={handlePrev}
-                className="flex items-center justify-center"
+                className="flex items-center justify-center flex-1"
                 style={{
-                  width: 116,
-                  height: 116,
+                  aspectRatio: "1/1",
                   borderRadius: SPACING.imageRadius,
                   backgroundColor: "#ffd967",
                 }}
@@ -182,38 +192,29 @@ const AboveGroundCard = ({
                 <span className="text-black text-[24px]">←</span>
               </button>
 
-              {/* Close button with page count */}
-              <button
-                onClick={handleClose}
-                className="flex flex-col items-center justify-end pb-4"
+              {/* Page count indicator */}
+              <div
+                className="flex flex-col items-center justify-center flex-1"
                 style={{
-                  width: 116,
-                  height: 116,
+                  aspectRatio: "1/1",
                   borderRadius: SPACING.imageRadius,
                   backgroundColor: "#ffd967",
                 }}
               >
                 <span
-                  className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[-0.4px] leading-[16px] mb-2"
-                  style={{ color: "#d9ae2f" }}
+                  className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[-0.4px] leading-[16px]"
+                  style={{ color: "rgba(0,0,0,0.3)" }}
                 >
                   {pageDisplay}
                 </span>
-                <span
-                  className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase"
-                  style={{ color: "#d9ae2f" }}
-                >
-                  CLOSE
-                </span>
-              </button>
+              </div>
 
               {/* Next button */}
               <button
                 onClick={handleNext}
-                className="flex items-center justify-center"
+                className="flex items-center justify-center flex-1"
                 style={{
-                  width: 116,
-                  height: 116,
+                  aspectRatio: "1/1",
                   borderRadius: SPACING.imageRadius,
                   backgroundColor: "#ffd967",
                 }}
@@ -344,7 +345,7 @@ const ThoughtExperimentCard = ({
             <button
               onClick={handleClose}
               className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase"
-              style={{ color: "#dbd3d2" }}
+              style={{ color: "#dbd3d2", marginRight: 3 }}
             >
               X
             </button>
@@ -513,14 +514,14 @@ export const Mockup = (): JSX.Element => {
           <>
             {/* When Thought Experiment is expanded: Above Ground (quarter) + Factle (quarter) side by side */}
             <div className="flex w-full" style={{ gap: SPACING.cardGap }}>
-              <div className="flex-1">
+              <div style={{ width: 'calc(50% - 7px)' }}>
                 <AboveGroundCard
                   forcedQuarter={true}
                   onExpand={() => setExpandedCard('aboveGround')}
                   onCollapse={() => setExpandedCard(null)}
                 />
               </div>
-              <div className="flex-1">
+              <div style={{ width: 'calc(50% - 7px)' }}>
                 <FactleFlipCard />
               </div>
             </div>
@@ -540,10 +541,10 @@ export const Mockup = (): JSX.Element => {
               onCollapse={() => setExpandedCard(null)}
             />
             <div className="flex w-full" style={{ gap: SPACING.cardGap }}>
-              <div className="flex-1">
+              <div style={{ width: 'calc(50% - 7px)' }}>
                 <FactleFlipCard />
               </div>
-              <div className="flex-1">
+              <div style={{ width: 'calc(50% - 7px)' }}>
                 <ThoughtExperimentCard
                   isExpanded={false}
                   onExpand={() => setExpandedCard('thoughtExperiment')}
