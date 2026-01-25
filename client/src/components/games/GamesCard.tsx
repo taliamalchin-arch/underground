@@ -3,6 +3,9 @@ import { Card, CardContent } from '../ui/card';
 import { SkiGame } from './SkiGame';
 import { WordScramble } from './WordScramble';
 import { ReflexTap } from './ReflexTap';
+import skiPreview from '../../assets/images/game-ski-preview.png';
+import wordPreview from '../../assets/images/game-word-preview.png';
+import tapPreview from '../../assets/images/game-tap-preview.png';
 
 const SPACING = {
   cardPadding: 18,
@@ -11,9 +14,9 @@ const SPACING = {
 };
 
 const GAMES = [
-  { id: 'ski', name: 'SKI FREE', component: SkiGame },
-  { id: 'word', name: 'WORD SCRAMBLE', component: WordScramble },
-  { id: 'reflex', name: 'TAP REFLEX', component: ReflexTap },
+  { id: 'ski', name: 'SKI FREE', component: SkiGame, preview: skiPreview },
+  { id: 'word', name: 'WORD SCRAMBLE', component: WordScramble, preview: wordPreview },
+  { id: 'reflex', name: 'TAP REFLEX', component: ReflexTap, preview: tapPreview },
 ];
 
 interface GamesCardProps {
@@ -100,17 +103,16 @@ export const GamesCard = ({
 
         {!isExpanded ? (
           <div className="flex-1 flex flex-row mt-2" style={{ gap: 9 }}>
-            {GAMES.map((game, index) => (
+            {GAMES.map((game) => (
               <div
                 key={game.id}
-                className="flex-1 flex items-center justify-center rounded-[24px]"
-                style={{
-                  background: 'linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(246,175,233,0.3) 100%)',
-                }}
+                className="flex-1 rounded-[24px] overflow-hidden relative"
               >
-                <span className="font-['Sora',Helvetica] font-bold text-[10px] text-center text-gray-600 px-2">
-                  {game.name}
-                </span>
+                <img 
+                  src={game.preview} 
+                  alt={game.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
             ))}
           </div>
@@ -121,22 +123,28 @@ export const GamesCard = ({
               style={{
                 width: 313,
                 height: 308,
-                background: 'linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%)',
               }}
             >
               {!isPlaying ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <div data-testid="current-game-name" className="font-['Satoshi-Bold'] text-2xl text-black mb-4">
-                    {currentGame.name}
+                <div className="absolute inset-0">
+                  <img 
+                    src={currentGame.preview} 
+                    alt={currentGame.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/30 flex flex-col items-center justify-center">
+                    <div data-testid="current-game-name" className="font-['Satoshi-Bold'] text-2xl text-white mb-4" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
+                      {currentGame.name}
+                    </div>
+                    <button
+                      data-testid="play-button"
+                      onClick={handlePlay}
+                      className="px-8 py-3 rounded-full font-['Sora',Helvetica] font-bold text-sm text-white shadow-lg transition-opacity"
+                      style={{ backgroundColor: "#F6AFE9" }}
+                    >
+                      PLAY
+                    </button>
                   </div>
-                  <button
-                    data-testid="play-button"
-                    onClick={handlePlay}
-                    className="px-8 py-3 rounded-full font-['Sora',Helvetica] font-bold text-sm text-white shadow-lg transition-opacity"
-                    style={{ backgroundColor: "#F6AFE9" }}
-                  >
-                    PLAY
-                  </button>
                 </div>
               ) : (
                 <GameComponent isPlaying={isPlaying} onGameOver={() => setIsPlaying(false)} />
