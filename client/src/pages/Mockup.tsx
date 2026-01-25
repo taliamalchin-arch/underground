@@ -107,7 +107,7 @@ const AboveGroundCard = () => {
       <CardContent className="p-0 w-full h-full flex flex-col">
         {/* Category label - always visible */}
         <div
-          className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase h-[17px]"
+          className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase h-[17px] whitespace-nowrap overflow-hidden"
           style={{ color: "#feeaae" }}
         >
           ABOVE GROUND CHECKIN
@@ -209,7 +209,7 @@ const FactleFlipCard = () => {
       }}
     >
       <CardContent className="p-0 w-full flex flex-col h-full gap-[6px]">
-        <div className="font-['Sora',Helvetica] font-bold text-[#f8e5f4] text-[10px] tracking-[1px] uppercase h-[17px]">
+        <div className="font-['Sora',Helvetica] font-bold text-[#f8e5f4] text-[10px] tracking-[1px] uppercase h-[17px] whitespace-nowrap overflow-hidden">
           FACTLE
         </div>
         {/* Flip container - only the cap flips */}
@@ -269,6 +269,56 @@ const FactleFlipCard = () => {
   );
 };
 
+// Thought Experiment Card - Expandable
+const ThoughtExperimentCard = () => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const fullText = "Imagine a world where every object slowly changes shape when no one is looking, but returns to normal the moment it's observed. Nothing ever breaks or malfunctions — it's simply different when unseen. Would the unseen version of the world feel less real, or more honest?";
+
+  const handleClose = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsExpanded(false);
+  };
+
+  return (
+    <Card
+      className="w-full border-0 flex flex-col cursor-pointer transition-all duration-300"
+      style={{
+        aspectRatio: isExpanded ? "404/380" : "195/190",
+        borderRadius: SPACING.cardRadius,
+        padding: SPACING.cardPadding,
+        backgroundColor: "#b9acaa",
+      }}
+      onClick={() => !isExpanded && setIsExpanded(true)}
+    >
+      <CardContent className="p-0 w-full h-full flex flex-col justify-between">
+        {/* Category label with close button when expanded */}
+        <div className="flex items-center justify-between">
+          <div
+            className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase whitespace-nowrap overflow-hidden"
+            style={{ color: "#dbd3d2" }}
+          >
+            THOUGHT EXPERIMENT
+          </div>
+          {isExpanded && (
+            <button
+              onClick={handleClose}
+              className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase"
+              style={{ color: "#dbd3d2" }}
+            >
+              X
+            </button>
+          )}
+        </div>
+        
+        <div className="font-['Satoshi-Bold',Helvetica] font-bold text-black text-[24px] tracking-[-0.96px] leading-[26px] overflow-hidden">
+          {isExpanded ? fullText : "Imagine a world where every object slowly changes shape when no one is looking, but returns to normal the moment it's observed."}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 // Quarter Card - Text variant (195x190 in Figma, scaled proportionally)
 const QuarterTextCard = ({
   category,
@@ -294,7 +344,7 @@ const QuarterTextCard = ({
   >
     <CardContent className="p-0 w-full h-full flex flex-col justify-between">
       <div
-        className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase h-[17px]"
+        className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase h-[17px] whitespace-nowrap overflow-hidden"
         style={{ color: categoryColor }}
       >
         {category}
@@ -331,7 +381,7 @@ const HalfTextCard = ({
   >
     <CardContent className="p-0 w-full h-full flex flex-col justify-between">
       <div
-        className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase h-[17px]"
+        className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase h-[17px] whitespace-nowrap overflow-hidden"
         style={{ color: categoryColor }}
       >
         {category}
@@ -368,7 +418,7 @@ const HalfImagesCard = ({
   >
     <CardContent className="p-0 w-full h-full flex flex-col" style={{ gap: 21 }}>
       <div
-        className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase h-[17px]"
+        className="font-['Sora',Helvetica] font-bold text-[10px] tracking-[1px] uppercase h-[17px] whitespace-nowrap overflow-hidden"
         style={{ color: categoryColor }}
       >
         {category}
@@ -421,12 +471,7 @@ export const Mockup = (): JSX.Element => {
             <FactleFlipCard />
           </div>
           <div className="flex-1">
-            <QuarterTextCard
-              category="THOUGHT EXPERIMENT"
-              categoryColor="#dbd3d2"
-              bgColor="#b9acaa"
-              content="Imagine a world where every object slowly changes shape when no one is looking, but returns to normal the moment it's observed."
-            />
+            <ThoughtExperimentCard />
           </div>
         </div>
 
