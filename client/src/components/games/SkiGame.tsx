@@ -23,13 +23,25 @@ interface SkiGameProps {
   onGameOver?: (score: number) => void;
 }
 
+const HIGH_SCORE_KEY = 'skifree_highscore';
+
 export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameLoopRef = useRef<number>();
   const [gameOver, setGameOver] = useState(false);
+  const [finalScore, setFinalScore] = useState(0);
+  const [highScore, setHighScore] = useState(() => {
+    try {
+      const saved = localStorage.getItem(HIGH_SCORE_KEY);
+      return saved ? parseInt(saved, 10) : 0;
+    } catch {
+      return 0;
+    }
+  });
+  const highScoreRef = useRef(highScore);
   
   const skierRef = useRef<SkierState>({
-    x: 150,
+    x: 156,
     y: 80,
     direction: 'center',
     speed: 3,
@@ -40,10 +52,11 @@ export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
   const obstaclesRef = useRef<Obstacle[]>([]);
   const nextObstacleIdRef = useRef(0);
   const keysRef = useRef<Set<string>>(new Set());
+  const touchHoldRef = useRef<'left' | 'right' | null>(null);
 
   const resetGame = useCallback(() => {
     skierRef.current = {
-      x: 150,
+      x: 156,
       y: 80,
       direction: 'center',
       speed: 3,
@@ -53,6 +66,7 @@ export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
     obstaclesRef.current = [];
     nextObstacleIdRef.current = 0;
     setGameOver(false);
+    setFinalScore(0);
   }, []);
 
   const spawnObstacle = useCallback((canvasWidth: number, canvasHeight: number) => {
@@ -61,11 +75,11 @@ export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
     
     const obstacle: Obstacle = {
       id: nextObstacleIdRef.current++,
-      x: Math.random() * (canvasWidth - 30) + 15,
+      x: Math.random() * (canvasWidth - 40) + 20,
       y: canvasHeight + 20,
       type,
-      width: type === 'tree' ? 20 : type === 'rock' ? 25 : 30,
-      height: type === 'tree' ? 30 : type === 'rock' ? 15 : 8,
+      width: type === 'tree' ? 16 : type === 'rock' ? 20 : 24,
+      height: type === 'tree' ? 24 : type === 'rock' ? 12 : 6,
     };
     
     obstaclesRef.current.push(obstacle);
@@ -74,99 +88,206 @@ export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
   const checkCollision = useCallback((skier: SkierState, obstacle: Obstacle): boolean => {
     if (obstacle.type === 'jump') return false;
     
-    const skierWidth = 16;
-    const skierHeight = 24;
+    const skierWidth = 10;
+    const skierHeight = 10;
+    const skierLeft = skier.x + 3;
+    const skierTop = skier.y + 4;
+    
+    let obsLeft: number, obsTop: number, obsWidth: number, obsHeight: number;
+    
+    if (obstacle.type === 'tree') {
+      obsLeft = obstacle.x + 4;
+      obsTop = obstacle.y + 2;
+      obsWidth = 10;
+      obsHeight = 14;
+    } else {
+      obsLeft = obstacle.x + 2;
+      obsTop = obstacle.y + 2;
+      obsWidth = 14;
+      obsHeight = 6;
+    }
     
     return (
-      skier.x < obstacle.x + obstacle.width &&
-      skier.x + skierWidth > obstacle.x &&
-      skier.y < obstacle.y + obstacle.height &&
-      skier.y + skierHeight > obstacle.y
+      skierLeft < obsLeft + obsWidth &&
+      skierLeft + skierWidth > obsLeft &&
+      skierTop < obsTop + obsHeight &&
+      skierTop + skierHeight > obsTop
     );
   }, []);
 
-  const drawSkier = useCallback((ctx: CanvasRenderingContext2D, skier: SkierState) => {
-    ctx.save();
-    ctx.translate(skier.x + 8, skier.y + 12);
-    
-    if (skier.crashed) {
-      ctx.fillStyle = '#333';
-      ctx.fillRect(-10, -5, 20, 10);
-      ctx.fillStyle = '#ff6b6b';
-      ctx.font = '10px Arial';
-      ctx.fillText('X', -3, 3);
-    } else {
-      const angle = skier.direction === 'left' ? -0.3 : skier.direction === 'right' ? 0.3 : 0;
-      ctx.rotate(angle);
-      
-      ctx.fillStyle = '#2196F3';
-      ctx.beginPath();
-      ctx.ellipse(0, -4, 6, 8, 0, 0, Math.PI * 2);
-      ctx.fill();
-      
-      ctx.fillStyle = '#FFE4C4';
-      ctx.beginPath();
-      ctx.arc(0, -12, 5, 0, Math.PI * 2);
-      ctx.fill();
-      
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-8, 8);
-      ctx.lineTo(8, 8);
-      ctx.stroke();
-      
-      ctx.strokeStyle = '#8B4513';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(-4, -2);
-      ctx.lineTo(-15, -8);
-      ctx.moveTo(4, -2);
-      ctx.lineTo(15, -8);
-      ctx.stroke();
-    }
-    
-    ctx.restore();
+  const drawPixel = useCallback((ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(Math.floor(x), Math.floor(y), size, size);
   }, []);
 
+  const drawSkier = useCallback((ctx: CanvasRenderingContext2D, skier: SkierState) => {
+    const px = 2;
+    const sx = Math.floor(skier.x);
+    const sy = Math.floor(skier.y);
+    
+    if (skier.crashed) {
+      drawPixel(ctx, sx + 2, sy + 6, px, '#8B4513');
+      drawPixel(ctx, sx + 12, sy + 6, px, '#8B4513');
+      drawPixel(ctx, sx + 4, sy + 8, px, '#FFE4C4');
+      drawPixel(ctx, sx + 6, sy + 8, px, '#FFE4C4');
+      drawPixel(ctx, sx + 8, sy + 8, px, '#FFE4C4');
+      drawPixel(ctx, sx + 10, sy + 8, px, '#FFE4C4');
+      drawPixel(ctx, sx + 2, sy + 10, px, '#2196F3');
+      drawPixel(ctx, sx + 12, sy + 10, px, '#2196F3');
+      drawPixel(ctx, sx + 4, sy + 10, px, '#2196F3');
+      drawPixel(ctx, sx + 6, sy + 10, px, '#2196F3');
+      drawPixel(ctx, sx + 8, sy + 10, px, '#2196F3');
+      drawPixel(ctx, sx + 10, sy + 10, px, '#2196F3');
+      drawPixel(ctx, sx, sy + 14, px, '#333');
+      drawPixel(ctx, sx + 14, sy + 14, px, '#333');
+    } else if (skier.direction === 'left') {
+      drawPixel(ctx, sx, sy + 4, px, '#8B4513');
+      drawPixel(ctx, sx + 2, sy + 2, px, '#8B4513');
+      drawPixel(ctx, sx + 6, sy, px, '#FFE4C4');
+      drawPixel(ctx, sx + 8, sy, px, '#FFE4C4');
+      drawPixel(ctx, sx + 6, sy + 2, px, '#FFE4C4');
+      drawPixel(ctx, sx + 8, sy + 2, px, '#FFE4C4');
+      drawPixel(ctx, sx + 4, sy + 4, px, '#2196F3');
+      drawPixel(ctx, sx + 6, sy + 4, px, '#2196F3');
+      drawPixel(ctx, sx + 8, sy + 4, px, '#2196F3');
+      drawPixel(ctx, sx + 4, sy + 6, px, '#2196F3');
+      drawPixel(ctx, sx + 6, sy + 6, px, '#2196F3');
+      drawPixel(ctx, sx + 8, sy + 6, px, '#2196F3');
+      drawPixel(ctx, sx + 10, sy + 6, px, '#2196F3');
+      drawPixel(ctx, sx + 4, sy + 8, px, '#1976D2');
+      drawPixel(ctx, sx + 6, sy + 8, px, '#1976D2');
+      drawPixel(ctx, sx + 8, sy + 8, px, '#1976D2');
+      drawPixel(ctx, sx + 2, sy + 10, px, '#333');
+      drawPixel(ctx, sx + 4, sy + 10, px, '#333');
+      drawPixel(ctx, sx + 6, sy + 10, px, '#333');
+      drawPixel(ctx, sx + 8, sy + 10, px, '#333');
+      drawPixel(ctx, sx + 10, sy + 10, px, '#333');
+      drawPixel(ctx, sx + 12, sy + 8, px, '#8B4513');
+    } else if (skier.direction === 'right') {
+      drawPixel(ctx, sx + 14, sy + 4, px, '#8B4513');
+      drawPixel(ctx, sx + 12, sy + 2, px, '#8B4513');
+      drawPixel(ctx, sx + 6, sy, px, '#FFE4C4');
+      drawPixel(ctx, sx + 8, sy, px, '#FFE4C4');
+      drawPixel(ctx, sx + 6, sy + 2, px, '#FFE4C4');
+      drawPixel(ctx, sx + 8, sy + 2, px, '#FFE4C4');
+      drawPixel(ctx, sx + 6, sy + 4, px, '#2196F3');
+      drawPixel(ctx, sx + 8, sy + 4, px, '#2196F3');
+      drawPixel(ctx, sx + 10, sy + 4, px, '#2196F3');
+      drawPixel(ctx, sx + 4, sy + 6, px, '#2196F3');
+      drawPixel(ctx, sx + 6, sy + 6, px, '#2196F3');
+      drawPixel(ctx, sx + 8, sy + 6, px, '#2196F3');
+      drawPixel(ctx, sx + 10, sy + 6, px, '#2196F3');
+      drawPixel(ctx, sx + 6, sy + 8, px, '#1976D2');
+      drawPixel(ctx, sx + 8, sy + 8, px, '#1976D2');
+      drawPixel(ctx, sx + 10, sy + 8, px, '#1976D2');
+      drawPixel(ctx, sx + 4, sy + 10, px, '#333');
+      drawPixel(ctx, sx + 6, sy + 10, px, '#333');
+      drawPixel(ctx, sx + 8, sy + 10, px, '#333');
+      drawPixel(ctx, sx + 10, sy + 10, px, '#333');
+      drawPixel(ctx, sx + 12, sy + 10, px, '#333');
+      drawPixel(ctx, sx + 2, sy + 8, px, '#8B4513');
+    } else {
+      drawPixel(ctx, sx + 6, sy, px, '#FFE4C4');
+      drawPixel(ctx, sx + 8, sy, px, '#FFE4C4');
+      drawPixel(ctx, sx + 6, sy + 2, px, '#FFE4C4');
+      drawPixel(ctx, sx + 8, sy + 2, px, '#FFE4C4');
+      drawPixel(ctx, sx + 4, sy + 4, px, '#2196F3');
+      drawPixel(ctx, sx + 6, sy + 4, px, '#2196F3');
+      drawPixel(ctx, sx + 8, sy + 4, px, '#2196F3');
+      drawPixel(ctx, sx + 10, sy + 4, px, '#2196F3');
+      drawPixel(ctx, sx + 4, sy + 6, px, '#2196F3');
+      drawPixel(ctx, sx + 6, sy + 6, px, '#2196F3');
+      drawPixel(ctx, sx + 8, sy + 6, px, '#2196F3');
+      drawPixel(ctx, sx + 10, sy + 6, px, '#2196F3');
+      drawPixel(ctx, sx + 4, sy + 8, px, '#1976D2');
+      drawPixel(ctx, sx + 6, sy + 8, px, '#1976D2');
+      drawPixel(ctx, sx + 8, sy + 8, px, '#1976D2');
+      drawPixel(ctx, sx + 10, sy + 8, px, '#1976D2');
+      drawPixel(ctx, sx + 2, sy + 10, px, '#333');
+      drawPixel(ctx, sx + 4, sy + 10, px, '#333');
+      drawPixel(ctx, sx + 6, sy + 10, px, '#333');
+      drawPixel(ctx, sx + 8, sy + 10, px, '#333');
+      drawPixel(ctx, sx + 10, sy + 10, px, '#333');
+      drawPixel(ctx, sx + 12, sy + 10, px, '#333');
+      drawPixel(ctx, sx, sy + 4, px, '#8B4513');
+      drawPixel(ctx, sx + 14, sy + 4, px, '#8B4513');
+    }
+  }, [drawPixel]);
+
   const drawObstacle = useCallback((ctx: CanvasRenderingContext2D, obstacle: Obstacle) => {
-    ctx.save();
+    const px = 2;
+    const ox = Math.floor(obstacle.x);
+    const oy = Math.floor(obstacle.y);
     
     if (obstacle.type === 'tree') {
-      ctx.fillStyle = '#228B22';
-      ctx.beginPath();
-      ctx.moveTo(obstacle.x + 10, obstacle.y);
-      ctx.lineTo(obstacle.x, obstacle.y + 25);
-      ctx.lineTo(obstacle.x + 20, obstacle.y + 25);
-      ctx.closePath();
-      ctx.fill();
-      
-      ctx.fillStyle = '#8B4513';
-      ctx.fillRect(obstacle.x + 7, obstacle.y + 25, 6, 8);
+      drawPixel(ctx, ox + 6, oy, px, '#228B22');
+      drawPixel(ctx, ox + 8, oy, px, '#228B22');
+      drawPixel(ctx, ox + 4, oy + 2, px, '#228B22');
+      drawPixel(ctx, ox + 6, oy + 2, px, '#1B5E20');
+      drawPixel(ctx, ox + 8, oy + 2, px, '#228B22');
+      drawPixel(ctx, ox + 10, oy + 2, px, '#228B22');
+      drawPixel(ctx, ox + 2, oy + 4, px, '#228B22');
+      drawPixel(ctx, ox + 4, oy + 4, px, '#1B5E20');
+      drawPixel(ctx, ox + 6, oy + 4, px, '#228B22');
+      drawPixel(ctx, ox + 8, oy + 4, px, '#1B5E20');
+      drawPixel(ctx, ox + 10, oy + 4, px, '#228B22');
+      drawPixel(ctx, ox + 12, oy + 4, px, '#228B22');
+      drawPixel(ctx, ox + 4, oy + 6, px, '#228B22');
+      drawPixel(ctx, ox + 6, oy + 6, px, '#1B5E20');
+      drawPixel(ctx, ox + 8, oy + 6, px, '#228B22');
+      drawPixel(ctx, ox + 10, oy + 6, px, '#1B5E20');
+      drawPixel(ctx, ox, oy + 8, px, '#228B22');
+      drawPixel(ctx, ox + 2, oy + 8, px, '#1B5E20');
+      drawPixel(ctx, ox + 4, oy + 8, px, '#228B22');
+      drawPixel(ctx, ox + 6, oy + 8, px, '#1B5E20');
+      drawPixel(ctx, ox + 8, oy + 8, px, '#228B22');
+      drawPixel(ctx, ox + 10, oy + 8, px, '#1B5E20');
+      drawPixel(ctx, ox + 12, oy + 8, px, '#228B22');
+      drawPixel(ctx, ox + 14, oy + 8, px, '#228B22');
+      drawPixel(ctx, ox + 2, oy + 10, px, '#228B22');
+      drawPixel(ctx, ox + 4, oy + 10, px, '#1B5E20');
+      drawPixel(ctx, ox + 6, oy + 10, px, '#228B22');
+      drawPixel(ctx, ox + 8, oy + 10, px, '#1B5E20');
+      drawPixel(ctx, ox + 10, oy + 10, px, '#228B22');
+      drawPixel(ctx, ox + 12, oy + 10, px, '#1B5E20');
+      drawPixel(ctx, ox + 6, oy + 12, px, '#8B4513');
+      drawPixel(ctx, ox + 8, oy + 12, px, '#8B4513');
+      drawPixel(ctx, ox + 6, oy + 14, px, '#6D4C41');
+      drawPixel(ctx, ox + 8, oy + 14, px, '#6D4C41');
     } else if (obstacle.type === 'rock') {
-      ctx.fillStyle = '#696969';
-      ctx.beginPath();
-      ctx.ellipse(obstacle.x + 12, obstacle.y + 8, 12, 8, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#505050';
-      ctx.beginPath();
-      ctx.ellipse(obstacle.x + 10, obstacle.y + 6, 4, 3, 0, 0, Math.PI * 2);
-      ctx.fill();
+      drawPixel(ctx, ox + 6, oy, px, '#696969');
+      drawPixel(ctx, ox + 8, oy, px, '#696969');
+      drawPixel(ctx, ox + 10, oy, px, '#808080');
+      drawPixel(ctx, ox + 4, oy + 2, px, '#696969');
+      drawPixel(ctx, ox + 6, oy + 2, px, '#505050');
+      drawPixel(ctx, ox + 8, oy + 2, px, '#696969');
+      drawPixel(ctx, ox + 10, oy + 2, px, '#808080');
+      drawPixel(ctx, ox + 12, oy + 2, px, '#696969');
+      drawPixel(ctx, ox + 2, oy + 4, px, '#696969');
+      drawPixel(ctx, ox + 4, oy + 4, px, '#505050');
+      drawPixel(ctx, ox + 6, oy + 4, px, '#696969');
+      drawPixel(ctx, ox + 8, oy + 4, px, '#505050');
+      drawPixel(ctx, ox + 10, oy + 4, px, '#696969');
+      drawPixel(ctx, ox + 12, oy + 4, px, '#808080');
+      drawPixel(ctx, ox + 14, oy + 4, px, '#696969');
+      drawPixel(ctx, ox + 4, oy + 6, px, '#696969');
+      drawPixel(ctx, ox + 6, oy + 6, px, '#505050');
+      drawPixel(ctx, ox + 8, oy + 6, px, '#696969');
+      drawPixel(ctx, ox + 10, oy + 6, px, '#505050');
+      drawPixel(ctx, ox + 12, oy + 6, px, '#696969');
     } else if (obstacle.type === 'jump') {
-      ctx.fillStyle = '#87CEEB';
-      ctx.beginPath();
-      ctx.moveTo(obstacle.x, obstacle.y + 8);
-      ctx.lineTo(obstacle.x + 15, obstacle.y);
-      ctx.lineTo(obstacle.x + 30, obstacle.y + 8);
-      ctx.closePath();
-      ctx.fill();
-      ctx.strokeStyle = '#4169E1';
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      drawPixel(ctx, ox + 2, oy + 4, px, '#87CEEB');
+      drawPixel(ctx, ox + 4, oy + 4, px, '#87CEEB');
+      drawPixel(ctx, ox + 6, oy + 2, px, '#ADD8E6');
+      drawPixel(ctx, ox + 8, oy + 2, px, '#ADD8E6');
+      drawPixel(ctx, ox + 10, oy + 2, px, '#87CEEB');
+      drawPixel(ctx, ox + 12, oy + 2, px, '#87CEEB');
+      drawPixel(ctx, ox + 14, oy + 4, px, '#87CEEB');
+      drawPixel(ctx, ox + 16, oy + 4, px, '#87CEEB');
+      drawPixel(ctx, ox + 18, oy + 4, px, '#ADD8E6');
+      drawPixel(ctx, ox + 20, oy + 4, px, '#87CEEB');
     }
-    
-    ctx.restore();
-  }, []);
+  }, [drawPixel]);
 
   const gameLoop = useCallback(() => {
     const canvas = canvasRef.current;
@@ -177,28 +298,28 @@ export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
     
     const skier = skierRef.current;
     
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.fillStyle = '#f8f8ff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    for (let i = 0; i < 30; i++) {
-      ctx.fillStyle = 'rgba(200, 200, 255, 0.3)';
-      ctx.beginPath();
-      ctx.arc(
-        (Math.sin(Date.now() / 1000 + i * 100) * 20 + (i * 37) % canvas.width),
-        ((Date.now() / 20 + i * 50) % (canvas.height + 20)) - 10,
-        1.5,
-        0,
-        Math.PI * 2
+    for (let i = 0; i < 20; i++) {
+      ctx.fillStyle = 'rgba(200, 200, 255, 0.4)';
+      ctx.fillRect(
+        Math.floor((Math.sin(Date.now() / 800 + i * 50) * 15 + (i * 41) % canvas.width)),
+        Math.floor(((Date.now() / 25 + i * 40) % (canvas.height + 10)) - 5),
+        2,
+        2
       );
-      ctx.fill();
     }
     
     if (!skier.crashed) {
-      if (keysRef.current.has('ArrowLeft') || keysRef.current.has('a')) {
-        skier.x -= 4;
+      const isMovingLeft = keysRef.current.has('ArrowLeft') || keysRef.current.has('a') || touchHoldRef.current === 'left';
+      const isMovingRight = keysRef.current.has('ArrowRight') || keysRef.current.has('d') || touchHoldRef.current === 'right';
+      
+      if (isMovingLeft) {
+        skier.x -= 3;
         skier.direction = 'left';
-      } else if (keysRef.current.has('ArrowRight') || keysRef.current.has('d')) {
-        skier.x += 4;
+      } else if (isMovingRight) {
+        skier.x += 3;
         skier.direction = 'right';
       } else {
         skier.direction = 'center';
@@ -206,9 +327,9 @@ export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
       
       skier.x = Math.max(10, Math.min(canvas.width - 26, skier.x));
       skier.distance += skier.speed;
-      skier.speed = Math.min(8, 3 + skier.distance / 2000);
+      skier.speed = Math.min(6, 3 + skier.distance / 3000);
       
-      if (Math.random() < 0.03 + skier.speed / 200) {
+      if (Math.random() < 0.025 + skier.speed / 300) {
         spawnObstacle(canvas.width, canvas.height);
       }
     }
@@ -218,8 +339,17 @@ export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
       
       if (!skier.crashed && checkCollision(skier, obs)) {
         skier.crashed = true;
+        const score = Math.floor(skier.distance / 10);
+        setFinalScore(score);
+        if (score > highScoreRef.current) {
+          highScoreRef.current = score;
+          setHighScore(score);
+          try {
+            localStorage.setItem(HIGH_SCORE_KEY, score.toString());
+          } catch {}
+        }
         setGameOver(true);
-        onGameOver?.(Math.floor(skier.distance / 10));
+        onGameOver?.(score);
       }
       
       return obs.y > -50;
@@ -228,23 +358,13 @@ export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
     obstaclesRef.current.forEach(obs => drawObstacle(ctx, obs));
     drawSkier(ctx, skier);
     
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    ctx.font = 'bold 14px Sora, sans-serif';
-    ctx.fillText(`${Math.floor(skier.distance / 10)}m`, 10, 25);
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 12px monospace';
+    ctx.fillText(`${Math.floor(skier.distance / 10)} yds`, 8, 20);
     
-    if (skier.crashed) {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.fillRect(0, canvas.height / 2 - 40, canvas.width, 80);
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 18px Sora, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('CRASHED!', canvas.width / 2, canvas.height / 2 - 10);
-      ctx.font = '14px Sora, sans-serif';
-      ctx.fillText(`Distance: ${Math.floor(skier.distance / 10)}m`, canvas.width / 2, canvas.height / 2 + 15);
-      ctx.font = '12px Sora, sans-serif';
-      ctx.fillText('Tap to restart', canvas.width / 2, canvas.height / 2 + 35);
-      ctx.textAlign = 'left';
-    }
+    ctx.fillStyle = '#666';
+    ctx.font = '10px monospace';
+    ctx.fillText(`BEST: ${highScoreRef.current} yds`, 8, 34);
     
     if (isPlaying && !gameOver) {
       gameLoopRef.current = requestAnimationFrame(gameLoop);
@@ -282,7 +402,7 @@ export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
     };
   }, []);
 
-  const handleTouch = useCallback((e: TouchEvent<HTMLCanvasElement> | MouseEvent<HTMLCanvasElement>) => {
+  const handleTouchStart = useCallback((e: TouchEvent<HTMLCanvasElement> | MouseEvent<HTMLCanvasElement>) => {
     if (gameOver) return;
     
     const canvas = canvasRef.current;
@@ -298,16 +418,36 @@ export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
     }
     
     const x = clientX - rect.left;
-    const canvasMiddle = canvas.width / 2;
+    const canvasMiddle = rect.width / 2;
     
-    if (x < canvasMiddle - 30) {
-      keysRef.current.add('ArrowLeft');
-      setTimeout(() => keysRef.current.delete('ArrowLeft'), 100);
-    } else if (x > canvasMiddle + 30) {
-      keysRef.current.add('ArrowRight');
-      setTimeout(() => keysRef.current.delete('ArrowRight'), 100);
+    if (x < canvasMiddle) {
+      touchHoldRef.current = 'left';
+    } else {
+      touchHoldRef.current = 'right';
     }
   }, [gameOver]);
+
+  const handleTouchMove = useCallback((e: TouchEvent<HTMLCanvasElement>) => {
+    if (gameOver) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches[0].clientX;
+    const x = clientX - rect.left;
+    const canvasMiddle = rect.width / 2;
+    
+    if (x < canvasMiddle) {
+      touchHoldRef.current = 'left';
+    } else {
+      touchHoldRef.current = 'right';
+    }
+  }, [gameOver]);
+
+  const handleTouchEnd = useCallback(() => {
+    touchHoldRef.current = null;
+  }, []);
 
   const handleTryAgain = useCallback(() => {
     resetGame();
@@ -322,19 +462,28 @@ export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
         width={313}
         height={308}
         className="w-full h-full rounded-[24px]"
-        style={{ touchAction: 'none' }}
-        onTouchStart={handleTouch}
-        onMouseDown={handleTouch}
+        style={{ touchAction: 'none', imageRendering: 'pixelated' }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+        onMouseDown={handleTouchStart}
+        onMouseUp={handleTouchEnd}
+        onMouseLeave={handleTouchEnd}
       />
       {gameOver && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 rounded-[24px]">
-          <div className="font-['Satoshi-Bold'] text-2xl text-white mb-2">Game Over!</div>
-          <div className="font-['Sora'] text-sm text-white mb-4">Score: {skierRef.current.distance}</div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 rounded-[24px]">
+          <div className="font-['Satoshi-Bold'] text-2xl text-white mb-1" style={{ textShadow: '2px 2px 0 #000' }}>CRASHED!</div>
+          <div className="font-mono text-lg text-white mb-1">{finalScore} yards</div>
+          {finalScore >= highScore && finalScore > 0 && (
+            <div className="font-mono text-sm text-yellow-300 mb-2">NEW HIGH SCORE!</div>
+          )}
+          <div className="font-mono text-xs text-gray-300 mb-4">Best: {highScore} yds</div>
           <button
             data-testid="try-again-button"
             onClick={handleTryAgain}
-            className="px-6 py-2 rounded-full font-['Sora'] font-bold text-sm text-white shadow-lg"
-            style={{ backgroundColor: "#F6AFE9" }}
+            className="px-6 py-2 rounded-lg font-mono font-bold text-sm text-white border-2 border-white/50"
+            style={{ backgroundColor: "rgba(246, 175, 233, 0.9)" }}
           >
             TRY AGAIN
           </button>
