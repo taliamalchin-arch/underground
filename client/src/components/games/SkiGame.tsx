@@ -28,6 +28,7 @@ const HIGH_SCORE_KEY = 'skifree_highscore';
 export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameLoopRef = useRef<number>();
+  const [gameStarted, setGameStarted] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
   const [highScore, setHighScore] = useState(() => {
@@ -65,6 +66,7 @@ export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
     };
     obstaclesRef.current = [];
     nextObstacleIdRef.current = 0;
+    setGameStarted(false);
     setGameOver(false);
     setFinalScore(0);
   }, []);
@@ -371,21 +373,36 @@ export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
     }
   }, [isPlaying, gameOver, spawnObstacle, checkCollision, drawSkier, drawObstacle, onGameOver]);
 
+  const renderInitialFrame = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = '#f8f8ff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawSkier(ctx, skierRef.current);
+  }, [drawSkier]);
+
   useEffect(() => {
-    if (isPlaying) {
-      resetGame();
-      gameLoopRef.current = requestAnimationFrame(gameLoop);
-    }
-    
+    if (!isPlaying) return;
+    resetGame();
+    requestAnimationFrame(renderInitialFrame);
+  }, [isPlaying, resetGame, renderInitialFrame]);
+
+  useEffect(() => {
+    if (!isPlaying || !gameStarted || gameOver) return;
+    gameLoopRef.current = requestAnimationFrame(gameLoop);
     return () => {
-      if (gameLoopRef.current) {
-        cancelAnimationFrame(gameLoopRef.current);
-      }
+      if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current);
     };
-  }, [isPlaying, gameLoop, resetGame]);
+  }, [isPlaying, gameStarted, gameOver, gameLoop]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'a', 'd', 'w', 's'].includes(e.key)) {
+        e.preventDefault();
+        setGameStarted(true);
+      }
       keysRef.current.add(e.key);
     };
     
@@ -402,24 +419,29 @@ export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
     };
   }, []);
 
+  const handleStart = useCallback(() => {
+    setGameStarted(true);
+  }, []);
+
   const handleTouchStart = useCallback((e: TouchEvent<HTMLCanvasElement> | MouseEvent<HTMLCanvasElement>) => {
     if (gameOver) return;
-    
+    setGameStarted(true);
+
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const rect = canvas.getBoundingClientRect();
     let clientX: number;
-    
+
     if ('touches' in e) {
       clientX = e.touches[0].clientX;
     } else {
       clientX = e.clientX;
     }
-    
+
     const x = clientX - rect.left;
     const canvasMiddle = rect.width / 2;
-    
+
     if (x < canvasMiddle) {
       touchHoldRef.current = 'left';
     } else {
@@ -454,6 +476,16 @@ export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
     gameLoopRef.current = requestAnimationFrame(gameLoop);
   }, [resetGame, gameLoop]);
 
+  if (!isPlaying) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-white to-transparent rounded-[24px]">
+        <div className="font-['Satoshi-Bold'] text-black text-center" style={{ fontSize: 'calc(var(--text-small) * 1.2)' }}>
+          Ski
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-full h-full">
       <canvas
@@ -471,19 +503,36 @@ export const SkiGame = ({ isPlaying, onGameOver }: SkiGameProps) => {
         onMouseUp={handleTouchEnd}
         onMouseLeave={handleTouchEnd}
       />
+      {!gameStarted && !gameOver && (
+        <div
+          className="text-center z-10 absolute inset-0 flex flex-col items-center justify-center bg-white/80 cursor-pointer rounded-[24px]"
+          onClick={handleStart}
+          onTouchStart={handleStart}
+        >
+          <div className="font-['Satoshi-Bold'] text-xl text-black mb-2">
+            SKI
+          </div>
+          <div className="font-['Sora'] text-xs text-gray-500 mb-3">
+            Hold left or right to steer
+          </div>
+          <div className="font-['Sora'] text-xs text-pink-400">
+            Tap anywhere to start
+          </div>
+        </div>
+      )}
       {gameOver && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 rounded-[24px]">
-          <div className="font-['Satoshi-Bold'] text-2xl text-white mb-1" style={{ textShadow: '2px 2px 0 #000' }}>CRASHED!</div>
-          <div className="font-mono text-lg text-white mb-1">{finalScore} yards</div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center rounded-[24px]" style={{ background: 'rgba(8,8,8,0.96)' }}>
+          <div className="font-mono font-bold text-2xl mb-1" style={{ color: '#EE352E' }}>CRASHED!</div>
+          <div className="font-mono text-base mb-1" style={{ color: '#EE352E' }}>{finalScore} yards</div>
           {finalScore >= highScore && finalScore > 0 && (
-            <div className="font-mono text-sm text-yellow-300 mb-2">NEW HIGH SCORE!</div>
+            <div className="font-mono text-sm mb-2" style={{ color: '#EE352E', opacity: 0.7 }}>NEW HIGH SCORE!</div>
           )}
-          <div className="font-mono text-xs text-gray-300 mb-4">Best: {highScore} yds</div>
+          <div className="font-mono text-xs mb-5" style={{ color: 'rgba(238,53,46,0.45)' }}>Best: {highScore} yds</div>
           <button
             data-testid="try-again-button"
             onClick={handleTryAgain}
-            className="px-6 py-2 rounded-lg font-mono font-bold text-sm text-white border-2 border-white/50"
-            style={{ backgroundColor: "rgba(246, 175, 233, 0.9)" }}
+            className="px-6 py-2 font-mono font-bold text-sm"
+            style={{ background: 'transparent', color: '#EE352E', border: '2px solid #EE352E', borderRadius: '4px' }}
           >
             TRY AGAIN
           </button>

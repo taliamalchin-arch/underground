@@ -1,0 +1,188 @@
+PROMPTING ANALYSIS — Lessons from 42 Sessions on the Underground Project
+=========================================================================
+
+Generated: February 26, 2026
+Source: Analysis of all conversation transcripts across the Underground App build
+
+
+1. SCOPE QUANTIFIERS: "ALL" NEEDS TO BE EXPLICIT
+-------------------------------------------------
+
+The pattern: When you said "apply to all modules" or "this should be universal,"
+I consistently under-applied — fixing 3-4 modules and missing the rest. This
+happened 7+ explicit times and many more implicitly.
+
+Why it happened: "All modules" is clear to you because you can see the app. To
+me, it's ambiguous unless I enumerate every module. I'd fix the ones in the
+current conversation context and miss WordOfTheDay, OnThisDay, Games, etc.
+
+Tip: When you mean "all," explicitly list them — or say something like "Enumerate
+every module in Mockup.tsx and apply this to each one. Show me the list before
+you start." Forcing me to enumerate first catches omissions before I start coding.
+
+Research area: In software specs, this is called exhaustive enumeration vs.
+universal quantifiers. The phrase "apply to all" is a universal quantifier — it's
+precise in logic but vague in practice when the set isn't defined. Getting
+comfortable saying "list the set first, then apply" is a project management skill
+worth developing.
+
+
+2. "BODY COPY" AND DESIGN VOCABULARY PRECISION
+-----------------------------------------------
+
+The pattern: You said "make the body copy not bold" and I removed bold from
+everything, including headlines. You meant only the small descriptive text
+(definitions, descriptions). This triggered a multi-message correction cycle
+with "NOOOOOOO GO BACK I meant only unbld the smalllll body copy."
+
+Why it happened: "Body copy" in design terminology technically means the main
+paragraph text (excluding headlines), but the boundary is fuzzy — especially
+in a card UI where there's a title, a subtitle, and a description.
+
+Tip: Use the actual CSS class names or component names when possible: "Make
+.type-body not bold" or "The definition text in WordOfTheDay and the description
+in AboveGround — make those regular weight." Naming the specific elements removes
+ambiguity.
+
+Research area: Study typographic hierarchy terminology — the distinction between
+headline, subhead, deck/standfirst, body copy, caption, and label. Butterick's
+Practical Typography is excellent. When you can say "standfirst" instead of "the
+small text under the title," there's zero ambiguity.
+
+
+3. ANIMATION INTENT VS. ANIMATION TECHNIQUE
+--------------------------------------------
+
+The pattern: You'd say "smooth morphing animation" or "no jumps" and I'd reach
+for Framer Motion's layoutId — which uses scale transforms and warps text. This
+happened across 24+ animation-related exchanges and led to the biggest recurring
+frustration in the project.
+
+Why it happened: You described the visual outcome you wanted (smooth, no
+distortion), but the technical implementation I chose (layoutId) inherently
+distorts. The fix was always absolute positioning + animating real pixel values —
+but "smooth morph" didn't communicate that constraint.
+
+Tip: When describing animation behavior, include what should NOT happen alongside
+what should: "The container should resize smoothly, but text must reflow
+naturally — no scaling, no transform-based distortion." Adding the negative
+constraint would have caught the layoutId approach immediately.
+
+Research area: Learn the distinction between FLIP animations (First-Last-Invert-
+Play — uses scale transforms) vs. property animations (animating actual
+width/height/position values). Understanding that layout/layoutId in Framer
+Motion is a FLIP technique — and that FLIP inherently uses scale — would let you
+say "Don't use FLIP; animate real dimensions."
+
+
+4. "UNIVERSAL RULE" NEEDS STATE COVERAGE
+-----------------------------------------
+
+The pattern: Descender clipping was fixed and re-broken across 5+ sessions, 18+
+occurrences. You'd say "descenders should never be cut off — universal rule" and
+I'd fix the collapsed state but miss the expanded state, or fix one module but
+not others.
+
+Why it happened: "Universal" to you meant every module x every state (collapsed,
+half, expanded) x every text element. To me, "universal" meant "apply broadly"
+but I'd only audit what was immediately visible.
+
+Tip: When establishing a rule, specify the test matrix: "Check descender clipping
+in every module, in collapsed AND expanded states. Show me you've verified each
+one." Asking me to demonstrate verification forces thoroughness.
+
+Research area: This is essentially test coverage thinking — the concept of a test
+matrix (axes: modules x states x elements). QA methodology and test plan design
+would help you instinctively frame rules with their full scope. Even just knowing
+the phrase "check every combination of X and Y" is powerful.
+
+
+5. PROJECT CONTEXT — DON'T ASSUME I KNOW WHICH APP
+----------------------------------------------------
+
+The pattern: In one session, I built an entire DialKit for your Portfolio project
+instead of the Underground App. Your response: "Dude, I've been talking about the
+Underground App this entire time."
+
+Why it happened: Your IDE had a Portfolio file open, and your message said "these
+modules" without naming the project. I inferred from the open file context.
+
+Tip: When you have multiple projects open, name the project in your first
+message: "In the Underground App, ..." — just those four words would have saved
+that entire session.
+
+
+6. INCREMENTAL VS. SYSTEMIC FIXES
+-----------------------------------
+
+The pattern: The Factle card sizing went through 13+ iterations across 4
+sessions — front cap too small, back cap doesn't match, height inconsistent with
+other modules. Each time I'd tweak a scale value rather than establishing a
+proper sizing system.
+
+Why it happened: You'd say "front image should be larger" and I'd bump a number.
+Then "back should match front" and I'd bump another number. Each instruction was
+a local patch, not a systemic fix.
+
+Tip: When you notice something going through multiple cycles of incremental
+tweaks, step back and say: "Stop patching. Define a sizing system for this
+component — what determines the image size, and how do front and back derive from
+the same source of truth?" Asking for a system rather than a fix changes how I
+approach the problem.
+
+Research area: This is the difference between imperative ("make this 20% bigger")
+and declarative ("both images should be sized to fill their container with 8px
+padding") instructions. Declarative specs are self-verifying — I can check them
+against the result.
+
+
+7. FONT LOADING ≠ CSS WEIGHT
+------------------------------
+
+The pattern: You asked to unbold body copy and I set font-weight: 400, but it
+still looked bold. Multiple messages: "still looks bold," "it still looks boold,"
+"whats going on." Root cause: the font file (Satoshi-Bold) only contained bold
+glyphs — CSS font-weight: 400 can't make a bold-only font look light.
+
+Tip: This one's on me more than you, but the learning is: when a visual change
+"isn't working" after I've made the code change, say "The code change looks right
+but the visual result is wrong — could this be a font loading / asset issue rather
+than a CSS issue?" This pushes me to look at the font files themselves rather than
+re-applying the same CSS fix.
+
+Research area: Understanding font loading and @font-face mechanics — the
+relationship between the font file you load, the font-weight descriptor in
+@font-face, and the CSS font-weight property.
+
+
+8. LAB/REPLICA FIDELITY — SPECIFY "IDENTICAL" VS. "SIMILAR"
+-------------------------------------------------------------
+
+The pattern: You wanted the Animation Lab to be an exact replica of the main app
+so tuning would transfer. I built a simplified version with different CSS classes,
+hardcoded values, and missing modules. Your frustration: "why did we even make the
+lab if it doesn't translate properly."
+
+Tip: When asking for a tool that mirrors something else, specify the coupling:
+"The lab must import from the same source files (timing.ts, index.css). It must
+use the same CSS classes. Any value I change in the lab must write back to
+timing.ts so the main app picks it up on reload." Specifying the mechanism of
+coupling prevents me from building a lookalike that's actually decoupled.
+
+
+SUMMARY: YOUR BIGGEST LEVERAGE POINTS
+=======================================
+
+Priority | Skill to Develop            | One-Line Tip
+---------|-----------------------------|-----------------------------------------
+1        | Enumerate before "all"      | "List every module, then apply to each"
+2        | Negative constraints        | Say what should NOT happen, not just what should
+3        | Declarative over imperative | "Both images fill their container" > "Make this bigger"
+4        | State matrix thinking       | "Check collapsed AND expanded AND half"
+5        | Name the project/file       | Always anchor your first message to a specific context
+6        | Ask for systems, not patches| After 2 rounds of tweaking, say "define a system"
+
+The recurring meta-pattern: your visual intuition is strong — you always know
+what looks right. The gap is in translating that visual sense into constrained,
+enumerated, state-aware specifications. The more you can say "what, where, and
+where NOT," the fewer cycles we'll need.

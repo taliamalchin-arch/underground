@@ -1,0 +1,461 @@
+UNDERGROUND — DESIGN CRITIQUE
+February 24, 2026
+Critique by Interface Craft methodology (Josh Puckett)
+Focus: Visual design, typography system, storytelling coherence
+Scope: Ignoring animation polish (known WIP), evaluating interactions as storytelling devices
+
+================================================================================
+CONTEXT
+================================================================================
+
+Underground is a daily content discovery app for mobile — a curated feed of news,
+facts, philosophy, games, history, trivia, and long-form storytelling, framed as
+a counterpoint to mainstream media. The target user is someone on a break —
+subway, lunch, couch — looking for something thoughtful and surprising.
+
+The emotional arc the app intends: enter through glowing brackets, discover
+something underground, leave with the meditative message "look up, breathe,
+notice the person across from you."
+
+================================================================================
+FIRST IMPRESSIONS
+================================================================================
+
+The app has a clear vision and real ambition. The color palette is warm, the
+card-based structure gives each module its own identity, and the content curation
+is genuinely interesting — The Amber Room, the thought experiment about unseen
+objects, sharks being older than trees. The bottle cap flip card is charming.
+The "Seen It All?" closing text is the kind of thing that makes an app feel human.
+
+But when I scroll through the feed as a whole, it reads like a color sample book.
+Ten distinct background colors, nine content modules, three different interaction
+models, all at the same visual volume. The individual cards are each doing
+interesting things. The composition of those cards into a sequence doesn't tell
+the story the app wants to tell.
+
+================================================================================
+VISUAL DESIGN
+================================================================================
+
+ISSUE: Ten competing background colors with no tonal logic
+--------------------------------------------------------------------------------
+The feed uses warm yellow (#f4ca5b), bright blue (#2C63C7), muted tan (#b9acaa),
+sage green (#c1cea9), dark forest green (#597c3b), soft pink (#F6AFE9), deep
+magenta (#9B3A66), burnt orange (#EB9131), rust brown (#a96424), and purple
+(#967bd2). Some are dusty and muted, some are vibrant and saturated, some are
+dark. There's no shared tonal family or progression. Scrolling through the feed,
+the eye bounces between unrelated hues rather than moving through a coherent
+atmosphere.
+
+  QUICK FIX: Don't overhaul the palette entirely — instead, unify the saturation
+  and brightness range. Pull the vibrant outliers (pink, blue, magenta) toward the
+  same muted warmth as the ones that already work (tan, sage, rust). Desaturate
+  the pink by ~15%, warm the blue, and soften the magenta. Keep the hues distinct
+  but make them feel like they were mixed from the same paint set. This is a
+  color.ts tweak, not a redesign.
+
+
+ISSUE: Label contrast is inverted from its importance
+--------------------------------------------------------------------------------
+Every module uses a lighter tint of its background for the category label (e.g.,
+#feeaae on #f4ca5b for Above Ground, #dbd3d2 on #b9acaa for Thought Experiment).
+This makes the labels the lowest-contrast element on each card. But labels are
+the primary wayfinding mechanism — they tell the user what kind of content they're
+looking at before they read anything. The most important orientation element is
+the hardest to read.
+
+  QUICK FIX: Flip the label strategy. Instead of lighter-than-background, go
+  darker-than-background by 2-3 steps. On the yellow card, use a deep amber
+  instead of pale cream. On the tan card, use a warm brown. This keeps the
+  subtle aesthetic but makes labels actually readable. Update the LABEL values
+  in colors.ts — no component changes needed.
+
+
+ISSUE: Flat typographic hierarchy within cards
+--------------------------------------------------------------------------------
+The type scale defines 9 variants, but the working range is narrow. Title is
+20px bold, subhead is 15px bold, detail is 15px bold, body is 15px light. The
+distinction between subhead, detail, and body is weight alone at the same size.
+That's not a hierarchy users can perceive at scanning speed. And the title-to-body
+ratio (20px to 15px) is only 1.33x — not enough visual separation.
+
+  THIS NEEDS A RETHINK — see the Typography System Proposal section below.
+
+
+ISSUE: Every collapsed card speaks at the same volume
+--------------------------------------------------------------------------------
+All collapsed cards render their preview content in type-title (20px Satoshi-Bold).
+The trivia question, the thought experiment snippet, the micro-history title, the
+wiki teaser, the riddle — all identical. Nothing is louder or quieter. The feed
+becomes a wall of bold 20px text blocks in different-colored boxes.
+
+  QUICK FIX: This resolves naturally with the typography system proposal below.
+  Static cards (content IS the card) stay in headline type. Expandable cards use
+  a lighter teaser style when collapsed to signal "there's more here." Two voices,
+  one rule.
+
+
+ISSUE: Quarter cards are overloaded for their footprint
+--------------------------------------------------------------------------------
+At 195x190px, the Riddle card packs a 24-word question. The Word of the Day card
+fits a word, pronunciation, part of speech, and definition. These small cards hold
+paragraph-scale content in thumbnail-scale containers.
+
+  QUICK FIX: For quarter cards, truncate aggressively. Riddle collapsed could show
+  just "I speak without a mouth..." (first clause only). Word of the Day could
+  drop the definition when collapsed and show only the word + pronunciation. Let
+  the tap-to-reveal interaction carry the rest. Less text in a small space reads
+  as confident, not empty.
+
+================================================================================
+INTERFACE DESIGN
+================================================================================
+
+ISSUE: No focusing mechanism — the feed is a flat list
+--------------------------------------------------------------------------------
+When the app loads, the user sees the date header, then Above Ground, then Factle
++ Thought Experiment side-by-side. Nothing says "start here." The date header is
+visually dominant but functionally decorative. Everything competes equally.
+
+  QUICK FIX: Make Above Ground taller than the other cards when collapsed — even
+  30-40px more gives it visual primacy without changing the layout grid. It's the
+  "front page" of the daily edition. Let it feel like one.
+
+
+ISSUE: Content order doesn't build a narrative arc
+--------------------------------------------------------------------------------
+Games — the most stimulating module — sits in the middle. The user goes from a
+philosophical thought experiment to skiing down a mountain, then back to trivia,
+then to a meditative plea to breathe. The tonal arc breaks and never recovers.
+
+  QUICK FIX: Move Games up (right after Above Ground + Factle/Thought Experiment).
+  Front-load the energy. Then let the feed descend: Trivia/Riddle > Micro History >
+  On This Day / Word of the Day > Wiki Summary > Seen It All. The sequence becomes:
+  stimulate > play > quiz > learn > reflect > rest. This is a Mockup.tsx JSX
+  reorder — no component changes.
+
+
+ISSUE: The emotional climax is presented as a footnote
+--------------------------------------------------------------------------------
+"Seen It All?" is the thesis statement of the entire app. But it's plain white
+type-prose text with standard padding — indistinguishable from wiki body text.
+
+  QUICK FIX: Wrap it in a card with a distinct background (or a very subtle dark
+  card, slightly lighter than #171719 — like #1e1e22). Give it more top padding
+  (3-4x card-padding). Use a slightly larger type size or the title weight. One
+  card wrapper + spacing change. The content is already perfect.
+
+
+ISSUE: Expanded states add text, not dimension
+--------------------------------------------------------------------------------
+When a card expands, the user gets more paragraphs in the same type style on the
+same background color. The visual transformation is minimal — the card gets taller.
+
+  QUICK FIX: For the expandable cards (Above Ground, Micro History, Wiki Summary),
+  the expanded body text should feel distinctly different from the title. Using
+  Satoshi-Light (body weight) at a comfortable reading size with more generous
+  line-height already exists in the system — just make sure there's a real visual
+  gap between the headline and the body. A horizontal rule, a bit of extra spacing,
+  or a shift to the prose type class for expanded long-form would help. Small
+  layout adjustments per card, not new components.
+
+
+ISSUE: Factle bottle cap has no interaction hint
+--------------------------------------------------------------------------------
+When collapsed, the Factle card shows a label and a bottle cap image with no
+prompt. A first-time user doesn't know it flips.
+
+  QUICK FIX: Add a subtle "tap to flip" teaser in type-body below the cap, or
+  use the same low-contrast approach the labels use. Even a small text cue makes
+  the interaction discoverable without cluttering the card.
+
+================================================================================
+CONSISTENCY & CONVENTIONS
+================================================================================
+
+ISSUE: Three different patterns for card headers
+--------------------------------------------------------------------------------
+Expandable cards use the CardHeader component (label + button). Static cards use
+a manual label div. Word of the Day uses a tiny PNG image. Three treatments for
+the same UI element.
+
+  QUICK FIX: Use CardHeader everywhere. For non-expandable cards, pass
+  showButton={false} (the prop already exists). Replace the Word of the Day PNG
+  with a text label "WORD OF THE DAY". One component, one pattern.
+
+
+ISSUE: Interactive cards give no affordance signal
+--------------------------------------------------------------------------------
+Expandable cards show a chevron/X. But the Factle flip card and Reveal cards
+(Trivia, Riddle) are also interactive yet show no visual indicator. Non-expandable
+static cards (On This Day) look identical to reveal cards but do nothing on tap.
+
+  QUICK FIX: For reveal cards, add a subtle indicator — a small "tap" icon or a
+  different button icon (like a "?" or a refresh arrow) in the CardHeader button
+  slot. This distinguishes "tap to reveal" from "static content" without adding
+  visual noise. Could also just use a different icon in the existing button spot.
+
+
+ISSUE: Text color doesn't follow a consistent rule
+--------------------------------------------------------------------------------
+On Micro History (sage green), title is white and body is black — two colors on
+one card. Trivia (dark magenta) uses black text. Wiki (similar-value dark green)
+uses white. On This Day (dark rust) uses black. No predictable relationship
+between background darkness and text color.
+
+  QUICK FIX: Establish a simple rule and stick to it. For example: backgrounds
+  above 50% lightness get black text, below 50% get white text. Apply
+  universally. For Micro History, pick one text color (white works better on sage
+  green). Update the TEXT values in colors.ts. This is a 15-minute pass through
+  the color file.
+
+
+ISSUE: Uniform 190px collapsed height across all card types
+--------------------------------------------------------------------------------
+Every collapsed card — full-width, half-width, quarter — is 190px. This creates
+a metronomic rhythm where every row feels identical.
+
+  QUICK FIX: Give full-width expandable cards a slightly taller collapsed height
+  (220-230px). Keep quarter cards at 190px. This creates two rhythms — "big
+  cards" and "small cards" — which is enough variation to break the monotony.
+  Update collapsedHeight constants per card.
+
+================================================================================
+USER CONTEXT
+================================================================================
+
+The person opening Underground is taking a pause. They're curious, not urgent.
+They want to feel smarter, more connected, or gently entertained.
+
+Right now, the app asks the user to do a lot of cognitive switching. Each card has
+a different color, a different interaction model (expand? flip? reveal? static?),
+and a different content type. The experience is closer to walking through a craft
+market with twelve stalls than reading a beautifully paced magazine.
+
+The intro animation (glowing corner brackets: blue > white > green) creates a
+moment of ceremony. It says "something is about to be revealed." But what follows
+is an immediate bombardment of color and content, and the meditative close most
+users will never scroll to.
+
+What "uncommon care" looks like: pacing. The app knows its story — it has a
+ceremonial open and a contemplative close. What it's missing is the middle that
+carries the arc. A sense of descent from stimulation to stillness.
+
+================================================================================
+================================================================================
+
+TYPOGRAPHY SYSTEM — IMPLEMENTED
+
+================================================================================
+================================================================================
+
+STATUS: LIVE — applied February 24, 2026
+
+GOAL: Fewer types. Bigger and bolder. A clear system that distinguishes between
+"this content IS the card" (static) vs "this content PREVIEWS the card" (expandable).
+
+--------------------------------------------------------------------------------
+THE PROBLEM WITH THE OLD SYSTEM
+--------------------------------------------------------------------------------
+
+The old system had 9 type variants:
+  display, label, title, subhead, detail, body, teaser, prose, mono
+
+In practice, 3 of these were nearly identical:
+  - subhead: 15px Satoshi-Bold
+  - detail:  15px Satoshi-Bold
+  - body:    15px Satoshi-Light
+  (same size, only weight differed)
+
+And 2 were only used once:
+  - display: date header only
+  - mono: footer only
+
+This left title (20px bold) doing ALL the heavy lifting — headlines, teasers,
+questions, answers, truncated text all looked the same. Every collapsed card
+spoke at the same volume.
+
+--------------------------------------------------------------------------------
+CURRENT SYSTEM: 5 TYPES
+--------------------------------------------------------------------------------
+
+Cut from 9 to 5. Each has one clear job.
+
+  TYPE        FONT              SIZE              WEIGHT  LEADING   JOB
+  --------    ----------------  ----------------  ------  -------   --------------------------
+  display     Satoshi-Bold      dynamic           700     —         Date header. One instance.
+  label       Sora              10px × scale      700     —         Category tags. Uppercase.
+  headline    Satoshi-Bold      22px × scale      700     1.2       Card titles + static content.
+  reading     Satoshi-Regular   15px × scale      400     1.5       Expanded body text.
+  caption     Satoshi-Regular   13px × scale      400     1.38      Teasers, metadata, footer.
+
+Five types. Three fonts (Satoshi-Bold, Satoshi-Regular, Sora).
+
+Key size ratios:
+  headline / reading = 1.47x (up from 1.33x — noticeably clearer hierarchy)
+  headline / caption = 1.69x (bold title vs light secondary — unmistakable)
+  reading / caption  = 1.15x (body vs metadata — subtle but perceptible)
+
+Design decisions:
+  - Caption at 13px (not 12px as originally proposed) to prevent readability
+    issues on smaller phones. At --scale 0.82 (iPhone SE), 13px → 10.7px
+    actual — tight but readable. 12px would have hit 9.8px, below the floor.
+  - Reading uses Satoshi-Regular (400) instead of Satoshi-Light (300).
+    Light was too fragile on dark backgrounds (Wiki Summary on dark green).
+  - Each role has its own line-height: headline at 1.2 (tight, scannable),
+    reading at 1.5 (generous, comfortable), caption at 1.38 (in between).
+    This creates rhythm shifts between roles that reinforce hierarchy.
+
+What was merged and why:
+  - subhead   → headline (distinguished by accent color, not size)
+  - detail    → caption (pronunciation, metadata = small secondary info)
+  - body      → reading (clearer name: "this is for reading paragraphs")
+  - teaser    → caption (teasers and metadata serve the same structural role)
+  - prose     → reading (one reading size — 15px scaled is comfortable on mobile)
+  - mono      → caption with inline font-family override (one instance)
+
+--------------------------------------------------------------------------------
+CAPTION USAGE CONVENTION
+--------------------------------------------------------------------------------
+
+Caption handles two psychologically different jobs:
+
+  1. TEASER (collapsed expandable cards) — an invitation: "tap me, there's more"
+     → Use full opacity in the card's accent or secondary color
+     → This is reader-facing content. It should feel like a whisper of what's inside.
+
+  2. METADATA (source attribution, pronunciation, footer) — context
+     → Use reduced opacity (60-70%) or a quieter color
+     → This is incidental information. It should step back.
+
+Same CSS class (.type-caption), different visual treatment through color/opacity.
+Apple does this constantly — one type style, multiple voices through color weight.
+
+--------------------------------------------------------------------------------
+HOW THE 5 TYPES MAP TO CARD STATES
+--------------------------------------------------------------------------------
+
+STATIC CARDS (content IS the card — Trivia, Riddle, On This Day, Factle):
+
+  ┌─────────────────────────────┐
+  │ label: "TRIVIA"             │
+  │                             │
+  │ headline: "What year did    │
+  │ the first iPhone launch?"   │
+  └─────────────────────────────┘
+
+  The headline IS the content. Big, bold, fills the card.
+  When a reveal card is tapped, the answer appears in headline too (centered).
+
+
+WORD OF THE DAY (static, mixed roles):
+
+  ┌─────────────────────────────┐
+  │ label: "WORD OF THE DAY"    │
+  │                             │
+  │ headline: "Inure"           │
+  │ caption (0.7): [IN-YOOR]   │  ← metadata, reduced opacity
+  │ caption: to accustom to...  │  ← definition, full opacity
+  └─────────────────────────────┘
+
+
+EXPANDABLE CARDS — COLLAPSED (Above Ground, Micro History, Wiki Summary, Games):
+
+  ┌─────────────────────────────────────────┐
+  │ label: "MICRO HISTORY"              [v] │
+  │                                         │
+  │ headline: "Why notebooks are            │
+  │ usually lined"                          │
+  │ caption: "Early mass-produced paper..." │  ← lighter teaser signals expandability
+  └─────────────────────────────────────────┘
+
+  The weight contrast between headline (22px Bold) and caption (13px Regular)
+  is the visual cue that this card expands. Static cards don't have this lighter
+  text, so the user learns: caption below headline = tap for more.
+
+
+EXPANDABLE CARDS — EXPANDED:
+
+  ┌─────────────────────────────────────────┐
+  │ label: "MICRO HISTORY"              [x] │
+  │                                         │
+  │ headline: "Why notebooks are            │
+  │ usually lined"                          │
+  │                                         │
+  │ reading: "Early mass-produced paper     │
+  │ varied in quality, and lines helped     │
+  │ guide handwriting when ink bled easily. │
+  │ The ruled lines became standard..."     │
+  └─────────────────────────────────────────┘
+
+  Caption teaser replaced by reading text — full paragraphs in Satoshi-Regular
+  at a comfortable reading size with generous line-height. The shift from
+  caption to reading is the visual reward for expanding.
+
+
+WIKI SUMMARY — EXPANDED (long-form, multi-section):
+
+  ┌─────────────────────────────────────────┐
+  │ label: "WIKI SUMMARY"              [x] │
+  │                                         │
+  │ headline: "The Amber Room"              │
+  │                                         │
+  │ headline: "A Room Made of Sunlight"     │  ← accent color distinguishes from title
+  │ reading: "In 1701, King Frederick I..." │
+  │                                         │
+  │ headline: "The Gift"                    │
+  │ reading: "In 1716, Frederick William    │
+  │ I gave the entire room..."              │
+  └─────────────────────────────────────────┘
+
+  Section headings reuse headline in the accent color (#b5e3af on dark green).
+  No separate subhead type needed — color does the job.
+
+--------------------------------------------------------------------------------
+THE RULE
+--------------------------------------------------------------------------------
+
+When building a new card or adding content, ask one question:
+
+  "Is this the content, or is this about the content?"
+
+  If it IS the content      → headline
+  If it's ABOUT the content → reading (expanded) or caption (collapsed/metadata)
+  If it's a category tag    → label
+
+And for caption specifically:
+
+  If it's inviting the user in → full opacity, accent color
+  If it's just context         → reduced opacity (0.6–0.7)
+
+Three content types. One rule. Done.
+
+================================================================================
+TOP 5 CHANGES — RANKED BY IMPACT
+================================================================================
+
+1. IMPLEMENT THE 5-TYPE TYPOGRAPHY SYSTEM  ✓ DONE
+   Cut from 9 to 5 types (with caption bumped to 13px and per-role line-heights).
+   Fixes the flat hierarchy, identical card voices, and collapsed-vs-expandable
+   ambiguity. Applied across index.css, Mockup.tsx, AnimationLab.tsx, GamesCard.tsx,
+   typography.tsx, and TypographyDialKit.tsx.
+
+2. REORDER THE FEED FOR NARRATIVE ARC
+   Move Games up after Above Ground. Let the feed descend from energy to quiet.
+   This is a JSX reorder in Mockup.tsx — 5 minutes of cut-and-paste.
+
+3. FIX LABEL CONTRAST
+   Flip label colors from lighter-than-background to darker-than-background.
+   Update LABEL values in colors.ts. 10 minutes.
+
+4. ELEVATE THE "SEEN IT ALL?" SECTION
+   Wrap it in a subtle card, add breathing room, use headline weight.
+   One wrapper div + spacing change. 15 minutes.
+
+5. STANDARDIZE CARD HEADERS
+   Use CardHeader component everywhere. Replace Word of the Day PNG with text
+   label. Add showButton={false} for non-expandable cards. 20 minutes.
+
+================================================================================
+END OF CRITIQUE
+================================================================================

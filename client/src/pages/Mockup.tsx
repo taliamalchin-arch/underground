@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, animate } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { GamesCard } from "@/components/games/GamesCard";
 import { IntroAnimation } from "@/components/IntroAnimation";
@@ -330,6 +330,7 @@ const AboveGroundCard = ({
           gap: isExpanded ? 'var(--card-gap)' : 'calc(var(--card-gap) * 0.5)',
           overflow: 'hidden',
           flex: 1,
+          marginTop: isExpanded ? '-30px' : undefined,
         }}
       >
         {/* Title — container handles layout positioning (expand/collapse), content swipes (navigation) */}
@@ -442,7 +443,7 @@ const getFactleDayNumber = (): string => {
 const BottleCapFront = () => (
   <svg viewBox="0 0 900 900" style={{ width: '125%', height: '125%', filter: `drop-shadow(-2px 3px 4px ${COLORS.INTERACTIVE.SHADOW})` }}>
     {/* PNG image for front cap */}
-    <image href="/figmaAssets/factle-front.png" width="900" height="900" />
+    <image href="/figmaAssets/factle-front.svg" width="900" height="900" />
   </svg>
 );
 
@@ -459,17 +460,17 @@ const BottleCapBack = ({ fact, dayNumber }: { fact: string; dayNumber: string })
         {/* Arc path for curved text at BOTTOM - curves downward, inside the white ring with padding */}
         <path
           id="bottomArcPath"
-          d="M 230 550 A 280 280 0 0 0 730 550"
+          d="M 200 550 A 280 280 0 0 0 700 550"
           fill="none"
         />
       </defs>
 
       {/* PNG image for back cap background */}
-      <image href="/figmaAssets/factle-flipped.png" width="900" height="900" />
+      <image href="/figmaAssets/factle-back.svg" width="900" height="900" />
 
       {/* Center fact text - large and prominent, narrower width, taller */}
       <text
-        x="470"
+        x="450"
         y="360"
         textAnchor="middle"
         fill={COLORS.FACTLE.CAP_TEXT_DARK}
@@ -479,8 +480,8 @@ const BottleCapBack = ({ fact, dayNumber }: { fact: string; dayNumber: string })
         letterSpacing="-2.1"
         lineHeight="1.2"
       >
-        <tspan x="470" dy="0">{line1}</tspan>
-        <tspan x="470" dy="69">{line2}</tspan>
+        <tspan x="450" dy="0">{line1}</tspan>
+        <tspan x="450" dy="69">{line2}</tspan>
       </text>
 
       {/* Curved text at BOTTOM - UNDERGROUND FACT # */}
@@ -587,7 +588,7 @@ const ThoughtExperimentCard = ({
       className={`card-neumorphic ${!isExpanded ? 'cursor-pointer' : ''}`}
       style={{
         width: '100%',
-        height: '100%',
+        height: isExpanded ? 'auto' : '100%',
         borderRadius: 'var(--card-radius)',
         padding: 'var(--card-padding)',
         backgroundColor: COLORS.THEME.CARD_BG,
@@ -611,7 +612,7 @@ const ThoughtExperimentCard = ({
 
       <div
         style={{
-          flex: 1,
+          flex: isExpanded ? '0 0 auto' : 1,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: isExpanded ? 'flex-start' : 'flex-end',
@@ -728,7 +729,7 @@ const MicroHistoryCard = ({
             className="type-headline"
             style={{ flexShrink: 0, color: COLORS.THEME.HEADLINE_TEXT }}
             layout="position"
-            transition={anim.reposition}
+            transition={{ ...anim.reposition, damping: 50 }}
           >
             {title}
           </motion.div>
@@ -774,8 +775,11 @@ const WikiSummaryCard = ({
   const articleTitle = "The Amber Room";
   const scrollRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
   const [expandedHeight, setExpandedHeight] = useState(800);
   const collapsedHeight = 190;
+  const titleY = useMotionValue(0);
+  const yOffsetRef = useRef(0);
 
   const sections = [
     {
@@ -800,12 +804,28 @@ const WikiSummaryCard = ({
     },
   ];
 
-  // Measure expanded height from hidden div
+  // Measure expanded height + compute collapsed title y-offset
   useLayoutEffect(() => {
     if (measureRef.current) {
       setExpandedHeight(measureRef.current.offsetHeight);
     }
+    if (scrollRef.current && titleRef.current) {
+      // Content area height (collapsed) minus title height = exact offset to pin title at bottom
+      const offset = scrollRef.current.offsetHeight - titleRef.current.offsetHeight;
+      yOffsetRef.current = offset;
+      if (!isExpanded) {
+        titleY.set(offset); // snap to collapsed position without animation
+      }
+    }
   }, []);
+
+  // Animate title y when expand/collapse state changes
+  useEffect(() => {
+    const target = isExpanded ? 0 : yOffsetRef.current;
+    const transition = isExpanded ? anim.reposition : anim.expand;
+    const controls = animate(titleY, target, transition);
+    return () => controls.stop();
+  }, [isExpanded]);
 
   // Reset scroll position on collapse
   useEffect(() => {
@@ -877,46 +897,46 @@ const WikiSummaryCard = ({
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: isExpanded ? 'flex-start' : 'flex-end',
-            gap: 'calc(var(--card-gap) * 1.5)',
             overflow: 'hidden',
           }}
         >
-          {/* Title */}
-          <motion.div
-            className="type-headline text-white"
-            style={{ flexShrink: 0 }}
-            layout="position"
-            transition={anim.reposition}
-          >
-            {articleTitle}
-          </motion.div>
+          {/* Title + sections share a column with gap */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'calc(var(--card-gap) * 1.5)' }}>
+            {/* Title — y driven by useMotionValue, synced with card spring */}
+            <motion.div
+              ref={titleRef}
+              className="type-headline text-white"
+              style={{ flexShrink: 0, y: titleY }}
+            >
+              {articleTitle}
+            </motion.div>
 
-          {/* Sections — stagger entry */}
-          {isExpanded && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'calc(var(--card-gap) * 1.5)' }}>
-              {sections.map((section, i) => (
-                <motion.div
-                  key={i}
-                  className="flex flex-col"
-                  style={{ gap: 'calc(var(--card-gap) * 0.5)' }}
-                  initial={{ opacity: 0, y: anim.contentYOffset }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    ...anim.contentEnter,
-                    delay: 0.35 + i * anim.contentStagger,
-                  }}
-                >
-                  <div className="type-headline" style={{ color: COLORS.WIKI_SUMMARY.BACKGROUND }}>
-                    {section.heading}
-                  </div>
-                  <div className="type-reading text-white">
-                    {section.body}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
+            {/* Sections — stagger entry */}
+            {isExpanded && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'calc(var(--card-gap) * 1.5)' }}>
+                {sections.map((section, i) => (
+                  <motion.div
+                    key={i}
+                    className="flex flex-col"
+                    style={{ gap: 'calc(var(--card-gap) * 0.5)' }}
+                    initial={{ opacity: 0, y: anim.contentYOffset }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      ...anim.contentEnter,
+                      delay: 0.35 + i * anim.contentStagger,
+                    }}
+                  >
+                    <div className="type-headline" style={{ color: COLORS.WIKI_SUMMARY.BACKGROUND }}>
+                      {section.heading}
+                    </div>
+                    <div className="type-reading text-white">
+                      {section.body}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </motion.div>
     </div>
@@ -1049,8 +1069,9 @@ const RevealCard = ({
 
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
-    canvas.style.width = `${rect.width}px`;
-    canvas.style.height = `${rect.height}px`;
+    // 100% ensures pixel-perfect coverage via inset:0 — no subpixel gaps at edges
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -1061,14 +1082,27 @@ const RevealCard = ({
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, rect.width, rect.height);
 
-    // Draw the question text — flush to bottom-left (card padding is outside this container)
+    // ══ CANVAS MODULE CHECK ════════════════════════════════════════════════
+    // These constants mirror .type-headline in index.css exactly.
+    // To verify: search MEMORY.md for "canvas module check".
+    // DO NOT change these to "standard" canvas defaults — they are intentional.
+    //   CSS source                        Canvas constant
+    //   --text-headline: 22px * scale  →  TYPE_HEADLINE_BASE_PX  = 22
+    //   --tracking-tight: -0.04em      →  TYPE_HEADLINE_TRACKING = -0.04
+    //   --leading-headline: 1.15       →  TYPE_HEADLINE_LEADING  = 1.15
+    // ═══════════════════════════════════════════════════════════════════════
+    const TYPE_HEADLINE_BASE_PX  = 22;   // --text-headline base (before scale)
+    const TYPE_HEADLINE_TRACKING = -0.04; // --tracking-tight in em
+    const TYPE_HEADLINE_LEADING  = 1.15;  // --leading-headline
+
     const scale = parseFloat(
       getComputedStyle(document.getElementById("underground-root")!).getPropertyValue("--scale") || "1"
     );
-    const fontSize = 22 * scale;
+    const fontSize = TYPE_HEADLINE_BASE_PX * scale;
 
     ctx.fillStyle = COLORS.THEME.HEADLINE_TEXT;
     ctx.font = `700 ${fontSize}px 'Satoshi-Bold', Helvetica, sans-serif`;
+    ctx.letterSpacing = `${TYPE_HEADLINE_TRACKING * fontSize}px`; // -0.04em in px
     ctx.textBaseline = "top";
 
     // Word-wrap — full width, no internal padding
@@ -1099,18 +1133,16 @@ const RevealCard = ({
       lines[MAX_LINES - 1] = last + "…";
     }
 
-    const lineHeight = fontSize * 1.2;
-    const textBlockHeight = lines.length * lineHeight;
+    const lineHeight = fontSize * TYPE_HEADLINE_LEADING; // 1.15, NOT 1.2
+    // (n-1)*lineHeight + fontSize — last line's em-square flush to canvas bottom.
+    // DO NOT use n*lineHeight: that adds a trailing gap making text sit too high
+    // relative to adjacent DOM quarter cards (On This Day, Word of Day, etc).
+    const textBlockHeight = (lines.length - 1) * lineHeight + fontSize;
 
-    // ── BOTTOM-PIN: DO NOT CHANGE THIS ──────────────────────────────────────
-    // Text must sit at the canvas bottom so it appears the same distance from
-    // the card edge as DOM content in other quarter modules. The outer RevealCard
-    // div already has padding: var(--card-padding) on all sides — the canvas
-    // fills the inner area BELOW the label. No additional bottom offset belongs
-    // here. startY = rect.height - textBlockHeight puts the last line's baseline
-    // flush with the canvas bottom = padded inner card bottom = card-padding
-    // from the card edge. This matches justify-end / justify-between layout
-    // used in QuarterTextCard. startY must NOT be 0 or any fixed constant.
+    // ── BOTTOM-PIN ───────────────────────────────────────────────────────────
+    // startY pins the last line's em-square to the canvas bottom.
+    // Outer div has padding:var(--card-padding) — canvas fills the inner area
+    // below the label. No extra offset needed here. startY must NOT be 0.
     // ────────────────────────────────────────────────────────────────────────
     const startY = Math.max(0, rect.height - textBlockHeight);
     lines.forEach((line, i) => {
@@ -1422,6 +1454,7 @@ const RevealCard = ({
                 transition={{
                   duration: 2,
                   repeat: Infinity,
+                  repeatDelay: 5,
                   ease: "easeInOut",
                   times: [0, 0.15, 0.35, 0.55, 0.7, 1],
                 }}
@@ -1619,7 +1652,7 @@ export const Mockup = (): JSX.Element => {
         const g = parseFloat(getComputedStyle(parent).gap);
         if (g > 0) setLayoutGap(g);
       }
-      if (teMeasureRef.current) {
+      if (teMeasureRef.current && teMeasureRef.current.offsetHeight > 0) {
         setTeFullHeight(teMeasureRef.current.offsetHeight);
       }
     };

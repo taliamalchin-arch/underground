@@ -1,0 +1,979 @@
+================================================================================
+LEARNING RESOURCES FOR DESIGNER-DEVELOPERS
+Building Interactive Apps with AI Coding Assistants
+================================================================================
+
+Compiled: February 2026
+For: Designers/creatives working with React, Framer Motion, CSS, typography,
+     and animation -- building with AI coding assistants like Claude Code.
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+
+  1.  Typographic Hierarchy Terminology
+  2.  CSS Animation vs JS Animation (FLIP, Transforms, Property Animation)
+  3.  Font Loading / @font-face Mechanics
+  4.  Declarative vs Imperative Specification Writing
+  5.  Test Matrix / QA Thinking for UI States
+  6.  Framer Motion Internals (layoutId, Springs, Property Animation)
+  7.  Design Systems / Design Tokens
+  8.  Prompt Engineering for AI Coding Assistants
+  9.  Software Specification Writing
+  10. CSS Fundamentals (Specificity, Cascade, Inheritance)
+  11. GLOSSARY OF KEY TERMS
+
+
+================================================================================
+1. TYPOGRAPHIC HIERARCHY TERMINOLOGY
+================================================================================
+
+The language designers use to describe text levels, sizes, weights, and roles.
+Understanding these terms lets you communicate precisely with design systems,
+component libraries, and AI assistants.
+
+--- Articles & Documentation ---
+
+  Butterick's Practical Typography (FREE ONLINE BOOK)
+  https://practicaltypography.com/
+  -- The single best resource for practical typography. Written by a type
+     designer and lawyer. Covers everything from line spacing to font
+     selection. The "Typography in Ten Minutes" chapter alone is worth it.
+     Start here: https://practicaltypography.com/typography-in-ten-minutes.html
+
+  Typographic Hierarchies -- Smashing Magazine
+  https://www.smashingmagazine.com/2022/10/typographic-hierarchies/
+  -- Deep, practical article on how to structure text hierarchy in real
+     designs. Covers size, weight, color, spacing as hierarchy tools.
+
+  How to Structure an Effective Typographic Hierarchy -- Toptal
+  https://www.toptal.com/designers/typography/typographic-hierarchy
+  -- Walks through the three levels (headline, subhead, body) with
+     concrete examples and size recommendations.
+
+  How to Create a Typographic Hierarchy -- Pangram Pangram Foundry
+  https://pangrampangram.com/blogs/journal/typographic-hierarchy
+  -- From an actual type foundry. Beautiful examples with real typefaces.
+
+  Ultimate Guide to Typography in Design -- Figma
+  https://www.figma.com/resource-library/typography-in-design/
+  -- Figma's own guide. Directly relevant if you're designing in Figma.
+
+  Typographic Hierarchy in Print, Web & App Design -- Pimp my Type
+  https://pimpmytype.com/hierarchy/
+  -- Covers hierarchy across different media with visual examples.
+
+  Introduction to Typography Hierarchy -- Uxcel
+  https://uxcel.com/blog/beginners-guide-to-typographic-hierarchy
+  -- Beginner-friendly with interactive learning elements.
+
+  Material Design 3: Typography Type Scale Tokens
+  https://m3.material.io/styles/typography/type-scale-tokens
+  -- Google's token-based typography system. Shows how Display, Headline,
+     Title, Body, and Label map to specific sizes and weights. This is
+     the gold standard for systematic typography naming.
+
+--- Videos ---
+
+  The Futur: Typography & Design (FREE, 12 hours)
+  https://www.classcentral.com/course/youtube-typography-design-48354
+  -- Chris Do's comprehensive typography course on YouTube. Covers
+     hierarchy, terminology, and practical application.
+
+  Mastering Typography Fundamentals with Chris Do
+  https://www.classcentral.com/course/youtube-how-to-master-the-fundamentals-of-typography-design-with-chris-do-136658
+  -- Focused specifically on fundamentals. Great starting point.
+
+  Beginning Graphic Design: Typography -- GCF Global
+  https://edu.gcfglobal.org/en/beginning-graphic-design/typography/1/
+  -- Short, clear, cartoon-style intro. Covers the 6 most important terms.
+
+--- Books (Paid but Exceptional) ---
+
+  Refactoring UI -- Adam Wathan & Steve Schoger
+  https://refactoringui.com/
+  -- Written specifically for developers who want to design better.
+     Typography chapter is outstanding. 200+ pages, very visual.
+     Covers hierarchy, spacing, color, layout from a builder's POV.
+
+
+================================================================================
+2. CSS ANIMATION vs JS ANIMATION -- FLIP, TRANSFORMS, PROPERTY ANIMATION
+================================================================================
+
+The core question: when do you animate with CSS, when with JavaScript, and
+what properties are safe to animate without janking the browser?
+
+--- Articles & Documentation ---
+
+  FLIP Your Animations -- Paul Lewis (Aerotwist)
+  https://aerotwist.com/blog/flip-your-animations/
+  -- THE original article that coined the FLIP technique (First, Last,
+     Invert, Play). Written by a Chrome DevRel engineer. Essential reading.
+
+  Animating Layouts with the FLIP Technique -- CSS-Tricks
+  https://css-tricks.com/animating-layouts-with-the-flip-technique/
+  -- Practical walkthrough of implementing FLIP. Code examples included.
+
+  Animating the Unanimatable -- Josh W. Comeau
+  https://www.joshwcomeau.com/react/animating-the-unanimatable/
+  -- How to animate layout properties (height, width) that CSS can't
+     transition smoothly. Uses FLIP concepts in React context.
+
+  An Interactive Guide to CSS Transitions -- Josh W. Comeau
+  https://www.joshwcomeau.com/animation/css-transitions/
+  -- Hands-on, interactive. Build intuition for how CSS transitions work.
+     Covers timing functions, which properties to animate, and why.
+
+  An Interactive Guide to CSS Keyframe Animations -- Josh W. Comeau
+  https://www.joshwcomeau.com/animation/keyframe-animations/
+  -- Deep dive into @keyframes from the ground up. Interactive examples.
+
+  CSS GPU Animation: Doing It Right -- Smashing Magazine
+  https://www.smashingmagazine.com/2016/12/gpu-animation-doing-it-right/
+  -- Explains WHY transform and opacity are the only properties you
+     should animate. Covers compositing layers, GPU textures, and memory.
+
+  Using CSS Animations -- MDN Web Docs
+  https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Animations/Using
+  -- The official reference. Covers @keyframes, animation properties,
+     and browser behavior.
+
+  Updates in Hardware-Accelerated Animation -- Chrome for Developers
+  https://developer.chrome.com/blog/hardware-accelerated-animations
+  -- From the Chrome team. What the browser actually does when you animate.
+
+  How to Develop Fast Web Animations (FLIP and RAIL)
+  https://webanimation.blog/blog/how-to-develop-fast-web-animations-by-using-flip-and-rail-techniques/
+  -- Combines FLIP with RAIL (Response, Animation, Idle, Load) for
+     a complete performance-aware animation strategy.
+
+--- Key Concept ---
+
+  THE RULE: Only animate `transform` and `opacity`.
+  Everything else (height, width, top, left, margin, padding) triggers
+  layout recalculation, which causes jank. FLIP is the technique that
+  lets you SIMULATE layout changes using only transform.
+
+  Transform operations (GPU-accelerated, safe to animate):
+    - translate(x, y) -- move
+    - scale(x, y)     -- resize
+    - rotate(deg)     -- spin
+    - skew(deg)       -- distort
+    - opacity         -- fade
+
+  Layout-triggering properties (AVOID animating directly):
+    - width, height
+    - top, left, right, bottom
+    - margin, padding
+    - font-size
+    - border-width
+
+
+================================================================================
+3. FONT LOADING / @font-face MECHANICS
+================================================================================
+
+How custom fonts actually get from a server to a user's screen, and how
+to prevent invisible text, layout shifts, and slow loads.
+
+--- Articles & Documentation ---
+
+  Best Practices for Fonts -- web.dev (Google)
+  https://web.dev/articles/font-best-practices
+  -- The definitive guide. Covers inline declarations, preloading,
+     self-hosting, font-display values, and format selection.
+
+  Optimize Web Fonts -- web.dev
+  https://web.dev/learn/performance/optimize-web-fonts
+  -- Performance-focused. Part of Google's Learn Performance course.
+
+  Preload Web Fonts to Improve Loading Speed -- web.dev
+  https://web.dev/articles/codelab-preload-web-fonts
+  -- Step-by-step codelab for font preloading.
+
+  @font-face -- MDN Web Docs
+  https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@font-face
+  -- The official reference for the @font-face rule. Every descriptor
+     explained.
+
+  The Best Font Loading Strategies -- CSS-Tricks
+  https://css-tricks.com/the-best-font-loading-strategies-and-how-to-execute-them/
+  -- Compares all major strategies: preload, font-display, JS loading,
+     Font Face Observer. Pros and cons of each.
+
+  How to Use @font-face in CSS -- CSS-Tricks
+  https://css-tricks.com/snippets/css/using-font-face-in-css/
+  -- Practical snippet-based tutorial. Copy-paste friendly.
+
+  Optimizing Web Fonts: FOIT vs FOUT vs Font Display Strategies
+  https://talent500.com/blog/optimizing-fonts-foit-fout-font-display-strategies/
+  -- Excellent comparison of FOIT, FOUT, and each font-display value.
+
+  Font Loading Strategies: FOIT and FOUT -- DEV Community
+  https://dev.to/ibn_abubakre/font-loading-strategies-foit-and-fout-393b
+  -- Clear, beginner-friendly explanation with diagrams.
+
+  Font Face Observer (library)
+  https://fontfaceobserver.com/
+  -- Small JS library for detecting when fonts load. Useful for
+     triggering actions after font loading completes.
+
+--- Key Concepts ---
+
+  FOIT = Flash of Invisible Text
+    Browser hides text until the custom font loads. User sees nothing.
+
+  FOUT = Flash of Unstyled Text
+    Browser shows fallback font, then swaps to custom font. User sees
+    a flash/shift but always has readable content.
+
+  font-display values:
+    auto     -- Browser decides (usually FOIT)
+    block    -- Short FOIT period, then show fallback
+    swap     -- Show fallback immediately, swap when ready (FOUT)
+    fallback -- Short block period, swap if font loads quickly
+    optional -- Only use web font if already cached
+
+  WOFF2 = the format to use for web. Best compression, wide support.
+
+
+================================================================================
+4. DECLARATIVE vs IMPERATIVE SPECIFICATION WRITING
+================================================================================
+
+This is about HOW you describe what you want built -- to humans or to AI.
+Declarative = describe WHAT the result should be.
+Imperative = describe HOW to achieve it step by step.
+
+--- Articles & Documentation ---
+
+  How to Write a Good Spec for AI Agents -- Addy Osmani
+  https://addyosmani.com/blog/good-spec/
+  -- THE article to read. Written by a Google Chrome engineering leader.
+     Covers structuring specs for AI, self-verification, testing,
+     and balancing clarity with brevity. Also published on O'Reilly:
+     https://www.oreilly.com/radar/how-to-write-a-good-spec-for-ai-agents/
+
+  Imperative vs Declarative Programming -- Fireship
+  https://fireship.dev/imperative-vs-declarative-programming/
+  -- Short, clear explanation with code examples. Fireship's style
+     is fast-paced and developer-friendly.
+
+  Difference Between Imperative and Declarative -- GeeksforGeeks
+  https://www.geeksforgeeks.org/theory-of-computation/difference-between-imperative-and-declarative-programming/
+  -- Table-based comparison. Good for quick reference.
+
+  Explain Declarative vs Imperative Like I'm 5 -- DEV Community
+  https://dev.to/khophi/explain-declarative-vs-imperative-programming-like-i-m-5-2a1l
+  -- Community discussion with multiple analogies. The restaurant
+     ordering analogy is particularly good.
+
+  Declarative vs Imperative -- DEV Community (ruizb)
+  https://dev.to/ruizb/declarative-vs-imperative-4a7l
+  -- Technical but accessible. Covers the spectrum between the two.
+
+--- How This Applies to Your Work ---
+
+  When writing specs for Claude Code (or any AI assistant):
+
+  DECLARATIVE (preferred):
+    "The card should have a 12px border radius, a subtle shadow,
+     and expand to full width on mobile."
+
+  IMPERATIVE (less ideal):
+    "First add border-radius: 12px. Then add box-shadow: 0 2px 4px
+     rgba(0,0,0,0.1). Then add a media query at 768px that sets
+     width to 100%."
+
+  The declarative version gives the AI room to implement correctly
+  while being precise about the outcome. The imperative version
+  might be wrong if the codebase uses different conventions.
+
+
+================================================================================
+5. TEST MATRIX / QA THINKING FOR UI STATES
+================================================================================
+
+Every UI component exists in multiple states. Missing one = a bug your
+users will find. Thinking in states is a design superpower.
+
+--- Articles & Documentation ---
+
+  Designing for Every State: A Comprehensive Guide to UI States
+  https://medium.com/@lapomeray/designing-for-every-state-a-comprehensive-guide-to-ui-states-in-product-design-77b72cef0034
+  -- Covers all major UI states with visual examples.
+
+  UI Best Practices for Loading, Error, and Empty States in React
+  https://blog.logrocket.com/ui-design-best-practices-loading-error-empty-state-react/
+  -- React-specific. Code examples for each state.
+
+  Loading, Empty and Error States Pattern -- Agriculture Design System
+  https://design-system.agriculture.gov.au/patterns/loading-error-empty-states
+  -- Government design system pattern. Very thorough documentation.
+
+  Loading Patterns -- Carbon Design System (IBM)
+  https://carbondesignsystem.com/patterns/loading-pattern/
+  -- IBM's approach to loading states. Shows skeleton screens,
+     progressive loading, and inline loading.
+
+  When to Use Loaders & Empty States -- UX Collective
+  https://uxdesign.cc/when-to-use-loaders-empty-states-ebd23cecc7d6
+  -- Decision framework for choosing the right loading pattern.
+
+  UI Testing Checklist with Examples -- Lost Pixel
+  https://www.lost-pixel.com/blog/ui-testing-checklist
+  -- Practical checklist format. Good for building your own test matrix.
+
+  20 Useful Test Cases for Testing User Interfaces -- SmartBear
+  https://smartbear.com/blog/20-useful-test-cases-for-testing-user-interfaces/
+  -- Numbered test cases you can adapt for your own components.
+
+  UI Testing: A Detailed Guide -- BrowserStack
+  https://www.browserstack.com/guide/ui-testing-guide
+  -- Comprehensive guide covering tools, approaches, and best practices.
+
+  Empty State -- PatternFly (Red Hat)
+  https://www.patternfly.org/components/empty-state/design-guidelines/
+  -- Excellent component-level documentation for empty states.
+
+--- The UI State Checklist ---
+
+  For EVERY component you build, consider these states:
+
+  [ ] Default / Idle        -- Normal resting state
+  [ ] Hover                 -- Mouse over (desktop)
+  [ ] Active / Pressed      -- Being clicked/tapped
+  [ ] Focus                 -- Keyboard focused (accessibility!)
+  [ ] Disabled              -- Can't interact
+  [ ] Loading               -- Waiting for data
+  [ ] Skeleton              -- Placeholder before first load
+  [ ] Empty                 -- No data to show
+  [ ] Error                 -- Something went wrong
+  [ ] Success               -- Action completed
+  [ ] Partial               -- Some data loaded, some still loading
+  [ ] Overflow              -- Too much content
+  [ ] Truncated             -- Text cut off
+  [ ] Responsive/Mobile     -- Small screen layout
+  [ ] Animated/Transitioning -- Between states
+
+
+================================================================================
+6. FRAMER MOTION INTERNALS (layoutId, Springs, Property Animation)
+================================================================================
+
+How the animation library actually works under the hood, so you can debug
+and design better animations.
+
+--- Articles & Documentation ---
+
+  Inside Framer's Magic Motion -- Nan (nan.fyi)
+  https://www.nan.fyi/magic-motion
+  -- THE deep dive into how Framer Motion's layout animations work.
+     Visual, interactive explanations of FLIP, projection nodes, and
+     how scale transforms cause distortion. ESSENTIAL READING.
+
+  Everything About Framer Motion Layout Animations -- Maxime Heckel
+  https://blog.maximeheckel.com/posts/framer-motion-layout-animations/
+  -- Comprehensive reference for layout animations. Covers the `layout`
+     prop, `layoutId`, `AnimatePresence`, and common pitfalls.
+
+  The Physics Behind Spring Animations -- Maxime Heckel
+  https://blog.maximeheckel.com/posts/the-physics-behind-spring-animations/
+  -- Explains mass, stiffness, and damping with actual physics formulas.
+     Shows how these values map to the feel of an animation.
+
+  Guide to Creating Animations That Spark Joy -- Maxime Heckel
+  https://blog.maximeheckel.com/posts/guide-animations-spark-joy-framer-motion/
+  -- Condensed guide to all key Framer Motion concepts. Good overview.
+
+  Advanced Animation Patterns with Framer Motion -- Maxime Heckel
+  https://blog.maximeheckel.com/posts/advanced-animation-patterns-with-framer-motion/
+  -- Propagation, exit transitions, and layout animation patterns
+     with interactive playgrounds.
+
+  Layout Animations -- Official Motion Docs
+  https://motion.dev/docs/react-layout-animations
+  -- The official documentation for layout animations, FLIP, and
+     shared element transitions.
+
+  React Animation -- Official Motion Docs
+  https://motion.dev/docs/react-animation
+  -- Covers transforms, keyframes, and transitions in Motion (v11+).
+
+  Transition Configuration -- Official Motion Docs
+  https://www.framer.com/motion/transition/
+  -- Spring, tween, and inertia transition types. All options documented.
+
+  React <motion /> Component -- Official Motion Docs
+  https://www.framer.com/motion/component/
+  -- Complete API reference for the motion component.
+
+  The Mighty Motion Guide
+  https://motion.mighty.guide/
+  -- 200+ CodeSandbox examples. Layout, exit, variants, keyframes,
+     dragging, SVG. Excellent for learning by example.
+
+  Framer Motion + React: A Complete Beginner's Guide
+  https://dev.to/iamfaham/framer-motion-react-a-complete-beginners-guide-2024-30e2
+  -- Start-to-finish beginner tutorial with code.
+
+  Creating React Animations with Motion -- LogRocket
+  https://blog.logrocket.com/creating-react-animations-with-motion/
+  -- Updated for the Motion rebrand. Practical examples.
+
+--- Videos ---
+
+  Let's Learn Framer Motion with Matt Perry -- Learn With Jason
+  https://www.classcentral.com/course/youtube-let-s-learn-framer-motion-with-matt-perry-learn-with-jason-210985
+  -- 1 hour 19 minutes with the CREATOR of Framer Motion. Covers
+     smooth transitions, list animations, and complex choreography.
+
+  Animating React Components with Framer Motion -- egghead.io
+  https://egghead.io/courses/animating-react-components-with-framer-motion-acecb152
+  -- Short, focused lessons. Good for targeted learning.
+
+  Layout Animations -- Frontend.fyi Motion Course
+  https://www.frontend.fyi/course/motion/07-layout-animations/01-layout-animations-are-super-powerful
+  -- Part of a comprehensive Motion course. Focuses on the most
+     powerful (and tricky) feature.
+
+--- Key Concepts ---
+
+  layoutId:
+    Connects two different components so Motion animates between them.
+    Uses FLIP internally. WARNING: uses scale transforms which can
+    distort text and child elements. See MEMORY.md for workarounds.
+
+  Spring Physics:
+    mass      -- How heavy the element feels (higher = slower)
+    stiffness -- How snappy the spring is (higher = faster snap)
+    damping   -- How quickly it settles (higher = less bounce)
+    Framer Motion runs springs at 60fps, frame by frame.
+
+  FLIP in Framer Motion:
+    First  -- Snapshot position before update
+    Last   -- Calculate final position after update
+    Invert -- Apply transform to make it LOOK like it's still at First
+    Play   -- Animate the transform away to reach Last
+
+  Projection Nodes:
+    Framer Motion maintains its own DOM-like tree of motion components
+    using "projection nodes" to track and animate layout changes.
+
+
+================================================================================
+7. DESIGN SYSTEMS / DESIGN TOKENS
+================================================================================
+
+The architecture behind consistent, scalable UI. Tokens are the atoms;
+the design system is the molecule.
+
+--- Articles & Documentation ---
+
+  Atomic Design -- Brad Frost (FREE ONLINE BOOK)
+  https://atomicdesign.bradfrost.com/table-of-contents/
+  -- THE foundational text on design systems. Introduces atoms,
+     molecules, organisms, templates, pages. Free to read online.
+
+  Design Tokens Explained -- Contentful
+  https://www.contentful.com/blog/design-token-system/
+  -- Clear explanation of what tokens are, why they matter, and how
+     to build a token system.
+
+  Design Tokens -- Material Design 3 (Google)
+  https://m3.material.io/foundations/design-tokens/overview
+  -- Google's implementation. Shows primitive, semantic, and component
+     tokens in a real system.
+
+  Design Tokens -- U.S. Web Design System
+  https://designsystem.digital.gov/design-tokens/
+  -- Government design system. Excellent documentation of how tokens
+     map to CSS custom properties.
+
+  What Are Design Tokens? -- Piccalilli
+  https://piccalil.li/blog/what-are-design-tokens/
+  -- Short, clear explanation by Andy Bell (creator of CUBE CSS).
+
+  Design Tokens: Beginners Guide -- Medium
+  https://medium.com/@nitishkmrk/design-tokens-beginners-guide-4424944bf5f9
+  -- Step-by-step beginner walkthrough.
+
+  The Developer's Guide to Design Tokens and CSS Variables -- Penpot
+  https://penpot.app/blog/the-developers-guide-to-design-tokens-and-css-variables/
+  -- Bridges the gap between design tokens and actual CSS custom
+     properties. Very practical.
+
+  How to Create an Intuitive Design Token System -- Penpot
+  https://penpot.app/blog/how-to-create-an-intuitive-design-token-system/
+  -- Naming conventions and organizational strategies.
+
+  Design Systems & Design Tokens Complete Guide -- design.dev
+  https://design.dev/guides/design-systems/
+  -- Comprehensive guide covering the full spectrum.
+
+  How to Manage Your Design Tokens -- Supernova
+  https://www.supernova.io/blog/how-to-manage-your-design-tokens
+  -- Tool-oriented guide for managing tokens at scale.
+
+  Figma Variables and Design Tokens -- Supernova
+  https://www.supernova.io/blog/understanding-the-differences-between-figma-variables-and-design-tokens
+  -- Important distinction for Figma users: variables vs tokens.
+
+  Tokens Studio for Figma -- Documentation
+  https://docs.tokens.studio/fundamentals/design-tokens
+  -- If you use Figma, this plugin bridges design and code tokens.
+
+--- Courses ---
+
+  The Ultimate Design Tokens Course -- The Design System Guide
+  https://thedesignsystem.guide/design-tokens-course
+  -- Structured course on design tokens specifically.
+
+  Subatomic: The Complete Guide to Design Tokens
+  https://designtokenscourse.com/
+  -- By Brad Frost and Ian Frost. Comprehensive paid course.
+
+--- Token Types Explained ---
+
+  Primitive Tokens (Global):
+    The raw values. Every color hex, every spacing pixel, every font size.
+    Example: color-blue-500: #3B82F6
+
+  Semantic Tokens:
+    Named by PURPOSE, not value. Reference primitive tokens.
+    Example: color-primary: {color-blue-500}
+    Example: color-error: {color-red-500}
+
+  Component Tokens:
+    Scoped to specific components.
+    Example: button-background: {color-primary}
+    Example: card-border-radius: {radius-lg}
+
+
+================================================================================
+8. PROMPT ENGINEERING FOR AI CODING ASSISTANTS
+================================================================================
+
+How to talk to Claude Code (and similar tools) to get better results.
+
+--- Articles & Documentation ---
+
+  Best Practices for Claude Code -- Anthropic Official Docs
+  https://code.claude.com/docs/en/best-practices
+  -- START HERE. Official guide from Anthropic. Covers CLAUDE.md,
+     context management, git workflow, and prompt strategies.
+
+  How Anthropic Teams Use Claude Code (PDF)
+  https://www-cdn.anthropic.com/58284b19e702b49db9302d5b6f135ad8871e7658.pdf
+  -- Internal practices from Anthropic's own engineering teams.
+
+  Prompt Engineering Overview -- Claude API Docs
+  https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview
+  -- Official prompt engineering documentation from Anthropic.
+
+  Prompting Best Practices -- Claude API Docs
+  https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices
+  -- Specific techniques that work well with Claude models.
+
+  CLAUDE.md Best Practices -- Arize Blog
+  https://arize.com/blog/claude-md-best-practices-learned-from-optimizing-claude-code-with-prompt-learning/
+  -- Practical tips for writing effective CLAUDE.md files. Covers
+     what to include, how to structure, and common mistakes.
+
+  How I Learned to Prompt Claude Code Better -- Four Modes
+  https://sderosiaux.medium.com/how-i-learned-to-prompt-ai-better-my-four-modes-177bddcfa6bd
+  -- Build mode, debug mode, explore mode, review mode. Practical
+     framework for knowing which type of prompt to use when.
+
+  7 Essential Claude Code Best Practices
+  https://www.eesel.ai/blog/claude-code-best-practices
+  -- Production-focused. Covers git workflow, context management,
+     and when to be vague vs precise.
+
+  Cooking with Claude Code: The Complete Guide
+  https://www.siddharthbharath.com/claude-code-the-complete-guide/
+  -- Comprehensive tutorial covering setup through advanced usage.
+
+  The Prompt Engineering Playbook for Programmers
+  https://addyo.substack.com/p/the-prompt-engineering-playbook-for
+  -- By Addy Osmani. Covers persona setting, few-shot examples,
+     chain-of-thought, and iterative refinement.
+
+  How to Write Better Prompts for AI Code Generation -- Graphite
+  https://graphite.com/guides/better-prompts-ai-code
+  -- Focused on code generation specifically. Covers language
+     specification, constraint setting, and example providing.
+
+  Prompt Engineering Guide
+  https://www.promptingguide.ai/introduction/tips
+  -- General prompt engineering. The "Generating Code" section is
+     especially relevant: https://www.promptingguide.ai/applications/coding
+
+  Prompt Engineering -- OpenAI API Docs
+  https://platform.openai.com/docs/guides/prompt-engineering
+  -- While for OpenAI, the principles transfer. Good section on
+     structured outputs and system messages.
+
+--- Key Techniques ---
+
+  1. Be specific about the outcome, not the steps
+  2. Reference files by path: "Edit /src/components/Card.tsx"
+  3. Provide context: "This uses Tailwind CSS and Framer Motion"
+  4. Show examples of what you want
+  5. Use CLAUDE.md for persistent project context
+  6. Start simple, iterate based on results
+  7. Use /clear to reset context when switching tasks
+  8. Create custom slash commands for repeated workflows
+
+
+================================================================================
+9. SOFTWARE SPECIFICATION WRITING
+================================================================================
+
+How to write clear descriptions of what you want built, whether for
+an AI assistant, a contractor, or your future self.
+
+--- Articles & Documentation ---
+
+  How to Write a Good Spec for AI Agents -- Addy Osmani
+  https://addyosmani.com/blog/good-spec/
+  -- Essential reading. Covers spec structure, self-verification,
+     LLM-as-a-Judge, conformance testing, and the balance between
+     detail and brevity. Also on O'Reilly:
+     https://www.oreilly.com/radar/how-to-write-a-good-spec-for-ai-agents/
+
+  Agentic Engineering -- Addy Osmani
+  https://addyosmani.com/blog/agentic-engineering/
+  -- Broader context for how specs fit into AI-assisted development.
+
+  My LLM Coding Workflow Going Into 2026 -- Addy Osmani
+  https://addyosmani.com/blog/ai-coding-workflow/
+  -- Practical workflow that puts specs at the center.
+
+  Spec-Driven Development with Claude Code -- Agent Factory
+  https://agentfactory.panaversity.org/docs/General-Agents-Foundations/spec-driven-development
+  -- Step-by-step guide to SDD with Claude Code. Covers Steering,
+     Requirements, Design, Tasks, and Implementation stages.
+
+  Spec-Driven Development with Claude Code in Action
+  https://alexop.dev/posts/spec-driven-development-claude-code-in-action/
+  -- Real-world example of SDD applied to a project.
+
+  Spec Coding Tips for Claude Code
+  https://medium.com/@sevakavakians/%EF%B8%8Fspec-coding-tips-for-claude-code-641109ca3189
+  -- Quick tips for writing specs that Claude Code understands well.
+
+  Claude Code Spec Workflow (GitHub)
+  https://github.com/Pimzino/claude-code-spec-workflow
+  -- Automated workflows for spec-driven development. Features
+     Requirements -> Design -> Tasks -> Implementation pipeline.
+
+  How to Write Software Requirements Specification -- Perforce
+  https://www.perforce.com/blog/alm/how-write-software-requirements-specification-srs-document
+  -- Traditional SRS document guide. Good for understanding the
+     formal structure.
+
+  Software Requirement Specification Format -- GeeksforGeeks
+  https://www.geeksforgeeks.org/software-engineering/software-requirement-specification-srs-format/
+  -- Quick reference for SRS structure and content.
+
+  Write a Software Requirement Document -- Asana
+  https://asana.com/resources/software-requirement-document-template
+  -- Template-based approach. Good for getting started quickly.
+
+--- Spec Writing Framework for AI Assistants ---
+
+  1. CONTEXT: What exists now? What's the project?
+  2. GOAL: What should exist when you're done?
+  3. CONSTRAINTS: What technologies, patterns, or conventions to use?
+  4. ACCEPTANCE CRITERIA: How do you know it's done?
+  5. EDGE CASES: What could go wrong? What are the boundary conditions?
+  6. NON-GOALS: What are you explicitly NOT trying to do?
+
+
+================================================================================
+10. CSS FUNDAMENTALS (Specificity, Cascade, Inheritance)
+================================================================================
+
+The three pillars that determine which CSS rule wins when multiple rules
+target the same element. Understanding these eliminates "why isn't my
+CSS working?" frustrations.
+
+--- Articles & Documentation ---
+
+  Learn CSS -- web.dev (Google) (FREE COURSE)
+  https://web.dev/learn/css
+  -- The single best free CSS course on the internet. Modular,
+     interactive, with quizzes. Individual modules:
+     Specificity: https://web.dev/learn/css/specificity
+     The Cascade: https://web.dev/learn/css/the-cascade
+     Selectors:   https://web.dev/learn/css/selectors
+
+  Cascade, Specificity, and Inheritance -- MDN Web Docs
+  https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Cascade_and_inheritance
+  -- Official Mozilla documentation. Thorough and accurate.
+
+  Handling Conflicts (Cascade, Specificity, Inheritance) -- MDN
+  https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Handling_conflicts
+  -- Practical guide focused on resolving CSS conflicts.
+
+  Specificity -- MDN Web Docs
+  https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Cascade/Specificity
+  -- The formal specification of how specificity is calculated.
+
+  CSS Specificity -- W3Schools
+  https://www.w3schools.com/css/css_specificity.asp
+  -- Simple, example-driven. Good quick reference.
+
+  Specifics on CSS Specificity -- CSS-Tricks
+  https://css-tricks.com/specifics-on-css-specificity/
+  -- Visual explanation with the classic "Star Wars specificity"
+     metaphor. Memorable and accurate.
+
+  CSS Specificity: Things You Should Know -- Smashing Magazine
+  https://www.smashingmagazine.com/2007/07/css-specificity-things-you-should-know/
+  -- Classic article. Still relevant. Deep examples.
+
+  The Cascade -- The Odin Project
+  https://www.theodinproject.com/lessons/foundations-the-cascade
+  -- Part of a free, full web development curriculum. Hands-on exercises.
+
+  CSS for JavaScript Developers -- Josh W. Comeau (Paid Course)
+  https://courses.joshwcomeau.com/css-for-js
+  -- If you write React, this is the best CSS course. Covers the
+     mental models JavaScript developers need. Paid but exceptional.
+
+--- Videos ---
+
+  Kevin Powell's YouTube Channel
+  https://www.youtube.com/@KevinPowell
+  -- 1000+ CSS videos. Called the "King of CSS." Start with his
+     videos on specificity, cascade layers, and CSS nesting.
+
+  CSS Cascade Layers -- Kevin Powell (18 min)
+  https://www.classcentral.com/course/youtube-no-more-specificity-issues-or-all-new-ones-a-look-at-css-cascade-layers-160417
+
+  Getting Started with CSS Nesting -- Kevin Powell (27 min)
+  https://www.classcentral.com/course/youtube-getting-started-with-css-nesting-203970
+
+--- Specificity Scoring ---
+
+  Inline styles:      1,0,0,0  (highest)
+  #id selectors:      0,1,0,0
+  .class selectors:   0,0,1,0
+  element selectors:  0,0,0,1
+  * (universal):      0,0,0,0
+
+  !important overrides all specificity (avoid using it).
+  Cascade layers (@layer) let you control specificity at a higher level.
+
+
+================================================================================
+11. GLOSSARY OF KEY TERMS
+================================================================================
+
+--- Typography ---
+
+  Headline / Display     Large, attention-grabbing text. Usually 32-60px.
+  Subhead / Subtitle     Secondary heading. Breaks content into sections.
+                         Usually 20-32px.
+  Body Copy              The main readable text. Usually 16-20px.
+  Caption                Small text for labels, metadata. Usually 12-14px.
+  Overline               Small caps text ABOVE a headline. Used for
+                         categories or labels.
+  Leading                Line height. Space between lines of text.
+                         Ideal: 120-150% of font size.
+  Tracking               Letter spacing across a word or block of text.
+  Kerning                Space between two SPECIFIC characters.
+  Baseline               The invisible line text sits on.
+  x-height               Height of lowercase letters (like "x").
+  Ascender               Part of letter that goes ABOVE x-height (b, d, h).
+  Descender              Part of letter that goes BELOW baseline (g, p, y).
+  Cap Height             Height of uppercase letters.
+  Typeface               The design of the letters (e.g., Helvetica).
+  Font                   A specific weight/style of a typeface
+                         (e.g., Helvetica Bold Italic).
+  Type Scale             A set of harmonious font sizes, often based on
+                         a ratio (e.g., 1.25 Major Third scale).
+  Measure / Line Length  Width of a text block in characters. Ideal: 45-75.
+  Orphan                 Single word on the last line of a paragraph.
+  Widow                  Single line of a paragraph at top of a new column.
+  Rag                    The uneven edge of left-aligned text on the right.
+  Flush Left             Left-aligned text (most common for body copy).
+  Justified              Text aligned to both left and right edges.
+
+--- CSS Animation ---
+
+  Transition             Animate between TWO states (A -> B). Triggered by
+                         a state change (hover, class toggle, etc.).
+  Animation              Animate through MULTIPLE states using @keyframes.
+                         Can loop, reverse, and run automatically.
+  @keyframes             Rule that defines the steps of an animation.
+                         Uses percentages (0%, 50%, 100%) or from/to.
+  Transform              CSS property that moves, scales, rotates, or skews
+                         an element WITHOUT triggering layout recalculation.
+  Translate              Move an element (transform: translateX/Y/Z).
+  Scale                  Resize an element (transform: scale()).
+  Rotate                 Spin an element (transform: rotate()).
+  Opacity                How see-through an element is (0 = invisible, 1 = visible).
+  Easing / Timing Fn     How an animation accelerates/decelerates.
+                         ease, ease-in, ease-out, ease-in-out, linear,
+                         cubic-bezier(x1, y1, x2, y2).
+  FLIP                   First, Last, Invert, Play. Technique for performant
+                         layout animations using only transforms.
+  Composite Layer        A layer the browser sends to the GPU for rendering.
+                         Transform and opacity create composite layers.
+  will-change            CSS property that tells the browser to prepare for
+                         an animation. Use sparingly.
+  requestAnimationFrame  JS method that syncs code execution with the
+                         browser's repaint cycle (60fps).
+  Layout Thrashing       When JS reads then writes DOM properties in a loop,
+                         forcing the browser to recalculate layout repeatedly.
+  Reflow / Layout        Browser recalculating element positions and sizes.
+  Repaint                Browser redrawing pixels without layout change.
+  Jank                   Visible stuttering when frames drop below 60fps.
+
+--- Font Loading ---
+
+  @font-face             CSS rule for declaring custom fonts.
+  font-display           Property controlling text visibility during load.
+  FOIT                   Flash of Invisible Text. Text hidden while font loads.
+  FOUT                   Flash of Unstyled Text. Fallback shown, then swapped.
+  WOFF / WOFF2           Web font formats. WOFF2 is smaller, faster, preferred.
+  Preload                <link rel="preload"> tells the browser to fetch
+                         the font early, before CSS parsing discovers it.
+  Subsetting             Removing unused characters from a font file to
+                         reduce size (e.g., only Latin characters).
+  Variable Font          Single font file containing multiple weights/widths.
+                         Reduces total file size vs loading multiple files.
+  Font Stack             List of fallback fonts in font-family declaration.
+                         e.g., font-family: "Inter", "Helvetica", sans-serif;
+
+--- Framer Motion ---
+
+  motion.div             Framer Motion wrapper component. Accepts animation
+                         props like animate, initial, exit, transition.
+  animate                Target values to animate TO.
+  initial                Starting values for mount animation.
+  exit                   Values to animate to when component unmounts.
+                         Requires <AnimatePresence> wrapper.
+  transition             Configuration for HOW to animate (spring, tween, etc.).
+  variants               Named animation states that can propagate to children.
+  layout                 Prop that enables automatic layout animation.
+  layoutId               Connects two components for shared element transitions.
+                         WARNING: Uses scale transforms internally.
+  AnimatePresence        Wrapper that enables exit animations for children
+                         that are removed from the React tree.
+  useMotionValue         Hook for creating motion values that bypass React
+                         re-renders for better performance.
+  useTransform           Hook for deriving one motion value from another
+                         (e.g., scroll position -> opacity).
+  Spring                 Physics-based animation. Defined by mass, stiffness,
+                         damping. Feels natural. No fixed duration.
+  Tween                  Duration-based animation. Has a set duration and
+                         easing curve. Predictable timing.
+  Inertia                Momentum-based animation. Decelerates naturally.
+                         Used for drag-and-release.
+  Projection Node        Internal Framer Motion data structure that tracks
+                         element positions for layout animations.
+
+--- Design Systems / Tokens ---
+
+  Design System          Collection of reusable components, patterns, and
+                         guidelines for building consistent UI.
+  Design Token           Named value storing a design decision.
+                         e.g., color-primary: #3B82F6
+  Primitive Token        Raw value. The full palette of possibilities.
+                         e.g., blue-500, spacing-4, font-size-16
+  Semantic Token         Named by meaning/purpose. References a primitive.
+                         e.g., color-error, spacing-card-padding
+  Component Token        Scoped to a specific component.
+                         e.g., button-border-radius, card-shadow
+  CSS Custom Property    CSS variable. --color-primary: #3B82F6;
+                         Used with var(--color-primary).
+  Theme                  A set of token values that can be swapped
+                         (e.g., light theme vs dark theme).
+  Atomic Design          Brad Frost's methodology: atoms -> molecules ->
+                         organisms -> templates -> pages.
+
+--- CSS Fundamentals ---
+
+  Cascade                The algorithm that resolves conflicts when multiple
+                         CSS rules target the same element. Considers origin,
+                         specificity, and source order.
+  Specificity            Numerical weight of a CSS selector. Higher specificity
+                         wins when cascade can't resolve by origin.
+  Inheritance            Some CSS properties (like color, font-size) pass from
+                         parent to child elements automatically.
+  Selector               Pattern that targets HTML elements for styling.
+                         Types: element (p), class (.card), ID (#main),
+                         attribute ([href]), pseudo (:hover, ::before).
+  !important             Declaration that overrides all specificity. Avoid.
+  Cascade Layer          @layer rule that lets you control the order of
+                         specificity evaluation. Modern CSS feature.
+  Source Order            When specificity is equal, the LAST rule in the
+                         stylesheet wins.
+  Computed Value         The final value the browser uses after resolving
+                         inheritance, cascade, and calculations.
+  Inherited Property     Property that passes to children by default
+                         (color, font-family, line-height, etc.).
+  Non-Inherited Prop     Property that does NOT pass to children
+                         (margin, padding, border, background, etc.).
+
+--- Specification / Prompting ---
+
+  Declarative            Describing WHAT the result should be, not HOW.
+                         "The button should be blue with rounded corners."
+  Imperative             Describing step-by-step HOW to achieve something.
+                         "Set background-color to blue. Set border-radius to 8px."
+  SRS                    Software Requirements Specification. Formal document.
+  PRD                    Product Requirements Document. What and why.
+  Acceptance Criteria    Conditions that must be true for a feature to be
+                         considered complete.
+  Edge Case              Unusual or boundary condition that might cause bugs.
+  Non-Functional Req     Requirements about HOW the system performs (speed,
+                         accessibility, security) rather than what it does.
+  User Story             "As a [user], I want to [action] so that [benefit]."
+  Spec-Driven Dev        Writing the specification BEFORE the code, then
+                         using AI to generate implementation from the spec.
+  CLAUDE.md              Special file that Claude Code reads at conversation
+                         start. Contains project context, conventions, rules.
+  System Prompt          Instructions given to an AI model that shape its
+                         behavior for the entire conversation.
+  Few-Shot Prompting     Providing examples in the prompt so the AI learns
+                         the pattern you want.
+  Chain-of-Thought       Asking the AI to reason step-by-step before
+                         giving a final answer.
+
+--- UI States ---
+
+  Default State          Normal, resting appearance of a component.
+  Loading State          Waiting for data or action to complete.
+  Skeleton Screen        Grey placeholder shapes mimicking content layout
+                         while data loads.
+  Empty State            Component has no data to display.
+  Error State            Something went wrong. Shows message and recovery.
+  Success State          Action completed successfully. Confirmation feedback.
+  Disabled State         Component is visible but cannot be interacted with.
+  Hover State            Visual change when mouse cursor is over element.
+  Focus State            Visual indicator when element has keyboard focus.
+                         CRITICAL for accessibility.
+  Active / Pressed       Visual change during click/tap.
+  Partial State          Some data loaded, some still pending.
+  Overflow               Content exceeds container boundaries.
+  Progressive Loading    Content appears in stages as it becomes available.
+
+
+================================================================================
+END OF LEARNING RESOURCES
+================================================================================
+
+Tip: When working with Claude Code, paste specific URLs from this list
+into your prompts for context. Example:
+
+  "I'm implementing a card animation. I've read the FLIP article at
+   https://aerotwist.com/blog/flip-your-animations/ and want to use
+   springs instead of tweens. The card should..."
+
+This gives Claude Code the mental model you're working from.
