@@ -1079,18 +1079,16 @@ const RevealCard = ({
     const rect = container.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
 
-    // +2px overflow on each side to prevent subpixel edge bleed
-    canvas.width = (rect.width + 2) * dpr;
-    canvas.height = (rect.height + 2) * dpr;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     ctx.scale(dpr, dpr);
 
-    // Fill with the card background color (+2px overflow to cover subpixel edges)
     ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, rect.width + 2, rect.height + 2);
+    ctx.fillRect(0, 0, rect.width, rect.height);
 
     // ══ CANVAS MODULE CHECK ════════════════════════════════════════════════
     // These constants mirror .type-headline in index.css exactly.
@@ -1154,10 +1152,9 @@ const RevealCard = ({
     // Outer div has padding:var(--card-padding) — canvas fills the inner area
     // below the label. No extra offset needed here. startY must NOT be 0.
     // ────────────────────────────────────────────────────────────────────────
-    // +1px offset accounts for canvas overflow padding
-    const startY = Math.max(0, rect.height - textBlockHeight) + 1;
+    const startY = Math.max(0, rect.height - textBlockHeight);
     lines.forEach((line, i) => {
-      ctx.fillText(line, 1, startY + i * lineHeight);
+      ctx.fillText(line, 0, startY + i * lineHeight);
     });
 
   }, [bgColor, question]);
@@ -1350,7 +1347,7 @@ const RevealCard = ({
         </div>
       </div>
 
-      {/* Scratch area — inset below label */}
+      {/* Scratch area — inset below label, outline covers subpixel bleed from accent layer */}
       <div
         ref={containerRef}
         style={{
@@ -1358,6 +1355,8 @@ const RevealCard = ({
           flex: 1,
           overflow: "hidden",
           cursor: "crosshair",
+          outline: `1px solid ${bgColor}`,
+          outlineOffset: "-1px",
         }}
       >
         {/* Bottom layer: answer on accent-colored surface */}
@@ -1385,9 +1384,9 @@ const RevealCard = ({
           ref={canvasRef}
           style={{
             position: "absolute",
-            inset: "-1px",
-            width: "calc(100% + 2px)",
-            height: "calc(100% + 2px)",
+            inset: 0,
+            width: "100%",
+            height: "100%",
             pointerEvents: healing ? "none" : "auto",
           }}
           onMouseDown={handleStart}
