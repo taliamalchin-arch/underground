@@ -12,24 +12,22 @@ const FactleCapDialKit = ({ fact = 'Sharks are older than trees', dayNumber = '0
     // CENTER TEXT (Fact)
     // ─────────────────────────────────────────────────────────────
     centerText: {
-      x: [470, 350, 550],           // horizontal position
+      x: [450, 350, 550],           // horizontal position
       y: [360, 300, 450],           // vertical position
-      fontSize: [63, 40, 100],       // text size
-      letterSpacing: [-2.1, -3, 2],    // kerning
-      dy: [69, 60, 120],             // vertical gap between lines
-      lineHeight: [1.2, 1.1, 1.5],   // leading (min 1.15 for descenders)
+      fontSize: [80, 40, 100],       // text size
+      letterSpacing: [-0.7, -3, 2],    // kerning
+      dy: [88, 60, 120],             // vertical gap between lines
     },
 
     // ─────────────────────────────────────────────────────────────
     // CURVED TEXT (Underground Fact #)
     // ─────────────────────────────────────────────────────────────
     curvedText: {
-      x: [30, -100, 100],             // horizontal offset (left-right shift)
+      x: [0, -100, 100],              // horizontal offset (left-right shift)
       y: [550, 350, 550],            // vertical position (arc baseline)
       fontSize: [24, 20, 50],        // text size
       letterSpacing: [4, 0, 8],      // kerning (tracking)
-      lineHeight: [1.2, 1.1, 1.5],   // leading (min 1.15 for descenders)
-      arcRadius: [280, 50, 400],     // arc radius (tighter to wider curve)
+      arcRadius: [260, 50, 400],     // arc radius (tighter to wider curve)
     },
   });
 
@@ -77,10 +75,9 @@ const FactleCapDialKit = ({ fact = 'Sharks are older than trees', dayNumber = '0
             textAnchor="middle"
             fill={COLORS.FACTLE.CAP_TEXT_DARK}
             fontSize={params.centerText.fontSize}
-            fontFamily="Satoshi-Bold, Helvetica, sans-serif"
-            fontWeight="700"
+            fontFamily="Satoshi-Regular, Helvetica, sans-serif"
+            fontWeight="400"
             letterSpacing={params.centerText.letterSpacing}
-            lineHeight={params.centerText.lineHeight}
           >
             <tspan x={params.centerText.x} dy="0">
               {line1}
@@ -97,7 +94,6 @@ const FactleCapDialKit = ({ fact = 'Sharks are older than trees', dayNumber = '0
             fontFamily="Sora, sans-serif"
             fontWeight="700"
             letterSpacing={params.curvedText.letterSpacing}
-            lineHeight={params.curvedText.lineHeight}
           >
             <textPath xlinkHref="#bottomArcPath" startOffset="50%" textAnchor="middle">
               UNDERGROUND FACT #{dayNumber}
@@ -119,7 +115,6 @@ x: ${params.centerText.x}
 y: ${params.centerText.y}
 fontSize: ${params.centerText.fontSize}
 letterSpacing: "${params.centerText.letterSpacing}"
-lineHeight: ${params.centerText.lineHeight}
 dy: ${params.centerText.dy}
 
 // Curved text
@@ -127,7 +122,6 @@ x: ${params.curvedText.x}
 y: ${params.curvedText.y}
 fontSize: ${params.curvedText.fontSize}
 letterSpacing: "${params.curvedText.letterSpacing}"
-lineHeight: ${params.curvedText.lineHeight}
 arcRadius: ${params.curvedText.arcRadius}
 
 // Arc path template:

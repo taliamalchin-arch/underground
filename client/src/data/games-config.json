@@ -1,0 +1,59 @@
+{
+  "games": [
+    {
+      "id": "snake",
+      "name": "Snake",
+      "componentFile": "SnakeGame.tsx",
+      "exportName": "SnakeGame",
+      "thumbnailType": "builtin"
+    },
+    {
+      "id": "flappy",
+      "name": "Flappy Circle",
+      "componentFile": "FlappyBird.tsx",
+      "exportName": "FlappyBird",
+      "thumbnailType": "builtin"
+    },
+    {
+      "id": "spaceshooter",
+      "name": "Space Shooter",
+      "componentFile": "SpaceShooter.tsx",
+      "exportName": "Space-Shooter",
+      "thumbnailType": "placeholder"
+    }
+  ],
+  "library": [
+    {
+      "id": "ski",
+      "name": "Ski",
+      "componentFile": "SkiGame.tsx",
+      "exportName": "SkiGame",
+      "thumbnailType": "builtin",
+      "addedAt": "2026-03-01T00:00:00.000Z"
+    },
+    {
+      "id": "snake",
+      "name": "Snake",
+      "componentFile": "SnakeGame.tsx",
+      "exportName": "SnakeGame",
+      "thumbnailType": "builtin",
+      "addedAt": "2026-03-01T00:00:00.000Z"
+    },
+    {
+      "id": "flappy",
+      "name": "Flappy Circle",
+      "componentFile": "FlappyBird.tsx",
+      "exportName": "FlappyBird",
+      "thumbnailType": "builtin",
+      "addedAt": "2026-03-01T00:00:00.000Z"
+    },
+    {
+      "id": "spaceshooter",
+      "name": "Space Shooter",
+      "componentFile": "SpaceShooter.tsx",
+      "exportName": "Space-Shooter",
+      "thumbnailType": "placeholder",
+      "addedAt": "2026-03-02T20:15:29.466Z"
+    }
+  ]
+}

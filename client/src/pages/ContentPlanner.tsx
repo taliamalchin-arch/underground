@@ -35,6 +35,7 @@ import {
 } from "@shared/schema";
 import * as XLSX from "xlsx";
 import JSZip from "jszip";
+import { DEFAULT_GUIDELINES } from "@shared/default-guidelines";
 
 // ── Planner Module Registry ──
 
@@ -222,27 +223,378 @@ function ThoughtExperimentEditor({ content, onChange }: { content: ThoughtExperi
   );
 }
 
-function GamesEditor({ content, onChange }: { content: GamesContent | undefined; onChange: (c: GamesContent) => void }) {
-  const games = content?.games || [{ name: "", description: "" }];
-  const updateGame = (i: number, field: string, value: string) => { const n = [...games]; n[i] = { ...n[i], [field]: value }; onChange({ games: n }); };
-  const addGame = () => onChange({ games: [...games, { name: "", description: "" }] });
-  const removeGame = (i: number) => { if (games.length > 1) onChange({ games: games.filter((_, idx) => idx !== i) }); };
+type GameConfigEntry = {
+  _id: string;
+  id: string;
+  name: string;
+  componentFile: string;
+  exportName: string;
+  thumbnailType: "builtin" | "placeholder";
+};
+
+function DraggableGameItem({ game, index, total, onRename, onRemove }: {
+  game: GameConfigEntry; index: number; total: number;
+  onRename: (id: string, name: string) => void;
+  onRemove: (id: string) => void;
+}) {
+  const controls = useDragControls();
+  return (
+    <Reorder.Item value={game} dragListener={false} dragControls={controls} className="list-none">
+      <Card className="p-4 bg-[#232326] border-[#3a3a3c]">
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-2">
+            <GripVertical
+              className="w-4 h-4 text-[#636366] cursor-grab active:cursor-grabbing flex-shrink-0"
+              onPointerDown={(e: ReactPointerEvent) => controls.start(e)}
+            />
+            <span className="text-sm text-[#8b8b8e]">Game {index + 1}</span>
+          </div>
+          {total > 1 && <Button variant="ghost" size="sm" onClick={() => onRemove(game._id)} className="text-red-400 hover:text-red-300">Remove</Button>}
+        </div>
+        <div className="space-y-3">
+          <Input
+            placeholder="Game name"
+            value={game.name}
+            onChange={(e) => onRename(game._id, e.target.value)}
+            className="bg-[#2c2c2e] border-[#3a3a3c] text-white placeholder:text-[#636366]"
+          />
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs bg-[#1c1c1e] text-[#8b8b8e] px-2 py-1 rounded">{game.componentFile}</span>
+            {game.thumbnailType === "builtin" && <Badge className="text-[10px] bg-[#3a3a3c] text-[#8b8b8e]">Built-in</Badge>}
+          </div>
+        </div>
+      </Card>
+    </Reorder.Item>
+  );
+}
+
+type LibraryEntry = {
+  id: string;
+  name: string;
+  componentFile: string;
+  exportName: string;
+  thumbnailType: "builtin" | "placeholder";
+  addedAt: string;
+};
+
+function GamesManager({ onChange }: { onChange: (c: any) => void }) {
+  const { toast } = useToast();
+  const [games, setGames] = useState<GameConfigEntry[]>([]);
+  const [library, setLibrary] = useState<LibraryEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [addMode, setAddMode] = useState<"paste" | "upload">("paste");
+  const [newGameName, setNewGameName] = useState("");
+  const [newGameExport, setNewGameExport] = useState("");
+  const [newGameCode, setNewGameCode] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const nextId = useRef(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    fetch("/api/games-config")
+      .then(res => res.json())
+      .then(data => {
+        setGames((data.games || []).map((g: any) => ({ ...g, _id: String(nextId.current++) })));
+        setLibrary(data.library || []);
+        setIsLoading(false);
+      })
+      .catch(() => setIsLoading(false));
+  }, []);
+
+  // Sync active games to the daily content system so Commit works
+  useEffect(() => {
+    if (!isLoading && games.length > 0) {
+      onChange({ games: games.map(g => ({ name: g.name, description: g.componentFile })) });
+    }
+  }, [games, isLoading]);
+
+  const saveConfig = (updatedGames: GameConfigEntry[], updatedLibrary?: LibraryEntry[]) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const cleanGames = updatedGames.map(({ _id, ...rest }) => rest);
+      const body: Record<string, any> = { games: cleanGames };
+      if (updatedLibrary) body.library = updatedLibrary;
+      fetch("/api/games-config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    }, 300);
+  };
+
+  const handleReorder = (newOrder: GameConfigEntry[]) => {
+    setGames(newOrder);
+    saveConfig(newOrder);
+  };
+
+  const handleRename = (id: string, name: string) => {
+    const updated = games.map(g => g._id === id ? { ...g, name } : g);
+    setGames(updated);
+    // Also update the library entry name
+    const game = updated.find(g => g._id === id);
+    if (game) {
+      const updatedLib = library.map(l => l.componentFile === game.componentFile ? { ...l, name } : l);
+      setLibrary(updatedLib);
+      saveConfig(updated, updatedLib);
+    } else {
+      saveConfig(updated);
+    }
+  };
+
+  const handleRemove = (localId: string) => {
+    if (games.length <= 1) return;
+    const removed = games.find(g => g._id === localId);
+    const updated = games.filter(g => g._id !== localId);
+    setGames(updated);
+    // Game stays in library — no library changes needed (it was already added on creation)
+    saveConfig(updated);
+    toast({ title: "Game removed from active", description: removed ? `${removed.name} is still in your library` : undefined });
+  };
+
+  const handleRestoreFromLibrary = (libEntry: LibraryEntry) => {
+    // Check if already active
+    if (games.some(g => g.componentFile === libEntry.componentFile)) {
+      toast({ title: "Already active", description: `${libEntry.name} is already in the active list` });
+      return;
+    }
+    const newEntry: GameConfigEntry = {
+      _id: String(nextId.current++),
+      id: libEntry.id,
+      name: libEntry.name,
+      componentFile: libEntry.componentFile,
+      exportName: libEntry.exportName,
+      thumbnailType: libEntry.thumbnailType,
+    };
+    const updated = [...games, newEntry];
+    setGames(updated);
+    saveConfig(updated);
+    toast({ title: "Game restored", description: `${libEntry.name} added back to active games` });
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setNewGameCode(reader.result as string);
+    reader.readAsText(file);
+    if (!newGameName) {
+      setNewGameName(file.name.replace(/\.tsx?$/, ""));
+    }
+  };
+
+  const handleAddGame = async () => {
+    if (!newGameName.trim() || !newGameCode.trim()) {
+      toast({ title: "Name and code are required", variant: "destructive" });
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const safeName = newGameName.trim().replace(/\s+/g, "").replace(/[^a-zA-Z0-9_-]/g, "");
+      const exportName = newGameExport.trim() || safeName;
+
+      const uploadRes = await fetch("/api/games/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: safeName, code: newGameCode }),
+      });
+      if (!uploadRes.ok) {
+        toast({ title: "Failed to upload game file", variant: "destructive" });
+        return;
+      }
+      const { filename } = await uploadRes.json();
+
+      const newEntry: GameConfigEntry = {
+        _id: String(nextId.current++),
+        id: safeName.toLowerCase(),
+        name: newGameName.trim(),
+        componentFile: filename,
+        exportName,
+        thumbnailType: "placeholder",
+      };
+      const updatedGames = [...games, newEntry];
+      setGames(updatedGames);
+
+      // Also add to library for permanent history
+      const libEntry: LibraryEntry = {
+        id: newEntry.id,
+        name: newEntry.name,
+        componentFile: newEntry.componentFile,
+        exportName: newEntry.exportName,
+        thumbnailType: newEntry.thumbnailType,
+        addedAt: new Date().toISOString(),
+      };
+      const updatedLibrary = [...library, libEntry];
+      setLibrary(updatedLibrary);
+
+      const cleanGames = updatedGames.map(({ _id, ...rest }) => rest);
+      await fetch("/api/games-config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ games: cleanGames, library: updatedLibrary }),
+      });
+
+      setShowAddForm(false);
+      setNewGameName("");
+      setNewGameExport("");
+      setNewGameCode("");
+      setAddMode("paste");
+      toast({ title: "Game added", description: `${newEntry.name} is now registered` });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Library entries not currently active
+  const inactiveLibrary = library.filter(l => !games.some(g => g.componentFile === l.componentFile));
+
+  if (isLoading) return <div className="text-[#8b8b8e] text-sm py-4">Loading games config...</div>;
 
   return (
     <div className="space-y-4">
-      {games.map((game, i) => (
-        <Card key={i} className="p-4 bg-[#232326] border-[#3a3a3c]">
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-sm text-[#8b8b8e]">Game {i + 1}</span>
-            {games.length > 1 && <Button variant="ghost" size="sm" onClick={() => removeGame(i)} className="text-red-400 hover:text-red-300">Remove</Button>}
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-[#8b8b8e]">{games.length} active game{games.length !== 1 ? "s" : ""}</span>
+        {library.length > 0 && (
+          <button
+            onClick={() => setShowLibrary(!showLibrary)}
+            className="text-xs text-[#636366] hover:text-[#a0a0a3] transition-colors"
+          >
+            {showLibrary ? "Hide" : "Show"} library ({library.length})
+          </button>
+        )}
+      </div>
+
+      <Reorder.Group axis="y" values={games} onReorder={handleReorder} className="flex flex-col gap-3">
+        {games.map((game, i) => (
+          <DraggableGameItem key={game._id} game={game} index={i} total={games.length} onRename={handleRename} onRemove={handleRemove} />
+        ))}
+      </Reorder.Group>
+
+      {!showAddForm ? (
+        <Button onClick={() => setShowAddForm(true)} variant="outline" className="w-full border-dashed">+ Add New Game</Button>
+      ) : (
+        <Card className="p-4 bg-[#232326] border-[#3a3a3c] space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-white">New Game</span>
+            <button onClick={() => { setShowAddForm(false); setNewGameName(""); setNewGameCode(""); setNewGameExport(""); }} className="text-[#a0a0a3] hover:text-white text-lg leading-none">&times;</button>
           </div>
-          <div className="space-y-3">
-            <Input placeholder="Game name" value={game.name} onChange={(e) => updateGame(i, "name", e.target.value)} className="bg-[#2c2c2e] border-[#3a3a3c] text-white placeholder:text-[#636366]" />
-            <Textarea placeholder="Description (optional)" value={game.description || ""} onChange={(e) => updateGame(i, "description", e.target.value)} className="bg-[#2c2c2e] border-[#3a3a3c] text-white placeholder:text-[#636366]" />
+
+          <Input
+            placeholder="Game name"
+            value={newGameName}
+            onChange={(e) => setNewGameName(e.target.value)}
+            className="bg-[#2c2c2e] border-[#3a3a3c] text-white placeholder:text-[#636366]"
+          />
+
+          <Input
+            placeholder="Export name (e.g. MyGame — defaults to PascalCase of name)"
+            value={newGameExport}
+            onChange={(e) => setNewGameExport(e.target.value)}
+            className="bg-[#2c2c2e] border-[#3a3a3c] text-white placeholder:text-[#636366]"
+          />
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setAddMode("paste")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${addMode === "paste" ? "bg-[#3a3a3c] text-white" : "text-[#636366] hover:text-[#8b8b8e]"}`}
+            >
+              Paste Code
+            </button>
+            <button
+              onClick={() => setAddMode("upload")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${addMode === "upload" ? "bg-[#3a3a3c] text-white" : "text-[#636366] hover:text-[#8b8b8e]"}`}
+            >
+              Upload File
+            </button>
+          </div>
+
+          {addMode === "paste" ? (
+            <textarea
+              placeholder="Paste your game component .tsx code here..."
+              value={newGameCode}
+              onChange={(e) => setNewGameCode(e.target.value)}
+              className="w-full min-h-[200px] bg-[#1c1c1e] border border-[#3a3a3c] text-[#e0e0e0] placeholder:text-[#636366] rounded-lg p-3 font-mono text-xs resize-y focus:outline-none focus:border-[#636366]"
+            />
+          ) : (
+            <div className="space-y-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".tsx,.ts"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full border-[#3a3a3c] text-[#8b8b8e] hover:text-white"
+              >
+                {newGameCode ? "File loaded — click to change" : "Choose .tsx file"}
+              </Button>
+              {newGameCode && (
+                <div className="text-xs text-[#636366] font-mono bg-[#1c1c1e] p-2 rounded max-h-[100px] overflow-y-auto">
+                  {newGameCode.slice(0, 500)}{newGameCode.length > 500 ? "..." : ""}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" onClick={() => { setShowAddForm(false); setNewGameName(""); setNewGameCode(""); setNewGameExport(""); }} className="border-[#3a3a3c] text-[#a0a0a3] hover:text-white">Cancel</Button>
+            <Button onClick={handleAddGame} disabled={isSaving || !newGameName.trim() || !newGameCode.trim()} style={{ backgroundColor: COLORS.GAMES.BACKGROUND, color: "#fff" }}>
+              {isSaving ? "Saving..." : "Save Game"}
+            </Button>
           </div>
         </Card>
-      ))}
-      <Button onClick={addGame} variant="outline" className="w-full border-dashed">+ Add Game</Button>
+      )}
+
+      {/* Library — all games ever uploaded, for history and reuse */}
+      {showLibrary && (
+        <div className="space-y-3 pt-2 border-t border-[#2c2c2e]">
+          <span className="text-xs font-medium text-[#636366] uppercase tracking-wide">Game Library</span>
+          {library.length === 0 ? (
+            <p className="text-xs text-[#636366]">No games in library yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {library.map((entry, i) => {
+                const isActive = games.some(g => g.componentFile === entry.componentFile);
+                return (
+                  <div key={`${entry.componentFile}-${i}`} className="flex items-center justify-between bg-[#1c1c1e] rounded-lg px-3 py-2.5">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-white font-medium truncate">{entry.name}</span>
+                        {isActive && <Badge className="text-[10px] bg-[#1B5E20] text-[#4CAF50]">Active</Badge>}
+                        {entry.thumbnailType === "builtin" && <Badge className="text-[10px] bg-[#3a3a3c] text-[#8b8b8e]">Built-in</Badge>}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="font-mono text-[11px] text-[#636366]">{entry.componentFile}</span>
+                        <span className="text-[10px] text-[#48484a]">
+                          {new Date(entry.addedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </span>
+                      </div>
+                    </div>
+                    {!isActive && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRestoreFromLibrary(entry)}
+                        className="text-[#6e9eff] hover:text-[#8bb4ff] text-xs ml-2 flex-shrink-0"
+                      >
+                        + Add
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {inactiveLibrary.length > 0 && (
+            <p className="text-[10px] text-[#48484a]">{inactiveLibrary.length} inactive game{inactiveLibrary.length !== 1 ? "s" : ""} available to restore</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -355,7 +707,7 @@ function ModuleEditor({ moduleType, content, onChange }: { moduleType: ModuleTyp
     case "aboveGround": return <AboveGroundEditor content={content} onChange={onChange} />;
     case "factle": return <FactleEditor content={content} onChange={onChange} />;
     case "thoughtExperiment": return <ThoughtExperimentEditor content={content} onChange={onChange} />;
-    case "games": return <GamesEditor content={content} onChange={onChange} />;
+    case "games": return <GamesManager onChange={onChange} />;
     case "trivia": return <TriviaEditor content={content} onChange={onChange} />;
     case "riddle": return <RiddleEditor content={content} onChange={onChange} />;
     case "microHistory": return <MicroHistoryEditor content={content} onChange={onChange} />;
@@ -502,198 +854,7 @@ async function exportData(contentList: DailyContent[], format: ExportFormat) {
   }
 }
 
-// ── Default Content Generation Guidelines ──
-
-const DEFAULT_GUIDELINES: Record<string, string> = {
-  aboveGround: `ABOVE GROUND — Content Generation Rules
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-FORMAT: 5 news items per day, each with headline + two description paragraphs + source
-
-TONE: Conversational but informed. Not formal news copy — more like how a sharp friend would explain something over coffee. Can be wry, observational, or slightly irreverent. Never clickbait.
-
-HEADLINES: Short, declarative, lowercase-feeling even if capitalized. Should feel like a text message from someone who reads a lot. Max ~10 words.
-  Good: "OpenAI's Sora video model finally dropped"
-  Bad: "BREAKING: Revolutionary AI Video Technology Launches"
-
-DESCRIPTIONS: Two paragraphs per item.
-  - Paragraph 1: What happened and why it matters, in 2-3 sentences.
-  - Paragraph 2: The cultural reaction, second-order effects, or a wry observation. Slightly more opinionated.
-
-SOURCE: Publication or platform, separated by " / " (e.g., "The Verge / X")
-
-TOPICS: Tech, culture, media, internet, science, design, music. Things the user would actually talk about. No sports scores, no stock tickers, no weather. Think: what would trend on a smarter version of Twitter.
-
-AVOID: Sensationalism, culture war framing, death/tragedy as entertainment, corporate PR rewrites.`,
-
-  factle: `FACTLE — Content Generation Rules
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-FORMAT: One fun fact, max 6 words
-
-TONE: Surprising, delightful, makes you want to tell someone. The kind of fact that makes you pause mid-sip.
-
-CONSTRAINTS:
-  - Must fit on two lines inside a bottle cap graphic (~6 words max)
-  - Should be verifiable and true
-  - Should provoke a "wait, really?" reaction
-
-GOOD EXAMPLES:
-  "Sharks are older than trees"
-  "Honey never expires"
-  "Octopuses have three hearts"
-  "Bananas are technically berries"
-
-BAD EXAMPLES (too long or boring):
-  "The average person walks about 100,000 miles in their lifetime"
-  "Water freezes at 32 degrees Fahrenheit"
-
-CATEGORIES TO DRAW FROM: Natural world, history, human body, space, food science, animal kingdom, language origins.`,
-
-  thoughtExperiment: `THINKERS — Content Generation Rules
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-FORMAT: One scenario/question, 2-4 sentences
-
-TONE: Quietly mind-bending. Not academic philosophy — more like a late-night conversation that makes you stare at the ceiling. Accessible, vivid, personal.
-
-STRUCTURE: "Imagine..." or a scenario setup, followed by a question that has no clean answer. The question should linger.
-
-GOOD EXAMPLE:
-  "Imagine a world where every object slowly changes shape when no one is looking, but returns to normal the moment it's observed. Nothing ever breaks or malfunctions — it's simply different when unseen. Would the unseen version of the world feel less real, or more honest?"
-
-THEMES: Perception, identity, time, memory, consciousness, the nature of reality, what it means to observe. Not trolley problems. Not "would you rather." Genuine wonder.
-
-AVOID: Anything with a clear right answer. Anything that feels like a school exercise. Anything dark or dystopian — this should feel expansive, not anxious.`,
-
-  games: `GAMES — Content Generation Rules
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-NOTE: Games are hardcoded interactive modules (Ski, Snake, Flappy Bird). Content generation is not applicable — the games themselves are the content.
-
-If new games are added in the future, they should be:
-  - Playable in under 60 seconds
-  - Simple enough to understand without instructions
-  - Pixel-art aesthetic consistent with current games
-  - Touch/swipe-friendly for mobile`,
-
-  trivia: `TRIVIA — Content Generation Rules
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-FORMAT: One question + one answer (short, factual)
-
-TONE: The kind of question you'd ask at a bar trivia night. Fun, not pedantic. The answer should feel satisfying to learn.
-
-QUESTION STYLE: Specific and answerable. Not vague. Should have one clear, correct answer.
-  Good: "What year did the first iPhone launch?"
-  Bad: "What is the most important invention?"
-
-ANSWER: Short — ideally 1-3 words. The brevity is part of the reveal satisfaction.
-
-DIFFICULTY: Medium. Not so easy it's boring, not so hard it's frustrating. The user should feel smart 60% of the time.
-
-TOPICS: Tech, pop culture, history, science, geography, music, film. Lean toward things the user's generation cares about.`,
-
-  riddle: `RIDDLE — Content Generation Rules
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-FORMAT: One riddle + one answer
-
-TONE: Classic riddle structure — poetic, metaphorical, "I am" or "I have" format. Should feel timeless, not gimmicky.
-
-CONSTRAINTS:
-  - The riddle should be solvable but not obvious
-  - Answer should be a single word or short phrase
-  - Must fit comfortably in a quarter card (~25 words max for the riddle)
-
-GOOD EXAMPLE:
-  Riddle: "I speak without a mouth and hear without ears. I have no body, but come alive with wind. What am I?"
-  Answer: "An echo"
-
-AVOID: Puns, jokes disguised as riddles, anything that requires specialized knowledge. The answer should make the reader go "oh, of course."`,
-
-  microHistory: `MICRO HISTORY — Content Generation Rules
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-FORMAT: Title (short, curious) + body text (2-3 paragraphs)
-
-TONE: Conversational explainer. Like a museum placard written by someone who actually finds it interesting. Not dry, not dumbed down. Clear enough for a 15-year-old, interesting enough for a 40-year-old.
-
-TITLE: Should be a "why" or "how" question, or a surprising declarative statement.
-  Good: "Why notebooks are usually lined"
-  Good: "How the handshake became a greeting"
-  Bad: "The History of Lined Paper" (too textbook)
-
-BODY: Start with the surprising core fact, then expand with context and origin story. End with something that connects it to the present day or to the reader's experience.
-
-LENGTH: ~150-250 words expanded. The collapsed preview shows the title + first ~2 lines.
-
-TOPICS: Everyday objects, common customs, design decisions, language origins, foods, gestures. Things the user encounters daily but never thought to question.`,
-
-  onThisDay: `ON THIS DAY — Content Generation Rules
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-FORMAT: Year (number) + event description (one sentence)
-
-TONE: Factual but not dry. The event should feel notable and interesting.
-
-CONSTRAINTS:
-  - Must be a real historical event that occurred on today's calendar date
-  - The year should be specific and accurate
-  - Description should be one clear, complete sentence
-  - Max ~15 words for the description (it's a quarter card)
-
-GOOD EXAMPLES:
-  2007: "Apple announced the original iPhone."
-  1969: "Apollo 11 launched from Kennedy Space Center."
-
-TOPICS: Tech milestones, cultural moments, scientific breakthroughs, notable firsts. Lean toward things that feel relevant or resonant to a modern audience. Skip wars and political elections unless truly iconic.`,
-
-  wordOfTheDay: `WORD OF THE DAY — Content Generation Rules
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-FORMAT: Word + pronunciation + part of speech + definition
-
-TONE: The word should feel like a small gift — something the user didn't know they needed. Not obscure for the sake of obscurity. Should be usable in a real sentence.
-
-WORD SELECTION:
-  - Uncommon but not archaic. The user should be able to use it this week.
-  - Should sound good when said aloud
-  - Bonus if it describes a feeling or experience that's hard to articulate otherwise
-
-GOOD EXAMPLES:
-  "Inure" [IN-YOOR] VERB — to accustom to hardship, difficulty, or pain
-  "Sonder" [SON-der] NOUN — the realization that each passerby has a life as vivid as your own
-  "Petrichor" [PET-ri-kor] NOUN — the pleasant smell of earth after rain
-
-PRONUNCIATION: Uppercase, syllable-separated with hyphens, in brackets.
-PART OF SPEECH: Uppercase (VERB, NOUN, ADJECTIVE, ADVERB)
-DEFINITION: Lowercase, concise, one line. No "used to describe" filler — just the meaning.`,
-
-  wikiSummary: `WIKI SUMMARY — Content Generation Rules
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-FORMAT: Article title + summary paragraph (3-5 sentences)
-
-TONE: Like a friend explaining something fascinating they just read on Wikipedia. Clear, engaging, slightly amazed. Not encyclopedic — distilled.
-
-ARTICLE SELECTION:
-  - Obscure but genuinely interesting Wikipedia articles
-  - Topics the user probably hasn't thought to search for
-  - Things that connect to everyday life in unexpected ways
-  - Bonus for articles with great "did you know" potential
-
-GOOD EXAMPLES:
-  Title: "The Overview Effect"
-  Summary: "Astronauts report a profound cognitive shift when they see Earth from space — a sudden, overwhelming sense that national borders are imaginary and all life is interconnected. The experience is so consistent across astronauts that it has its own name. Some describe it as the most transformative moment of their lives."
-
-  Title: "Phantom Time Hypothesis"
-  Summary: "A fringe theory claims that 297 years of history were fabricated — that the early Middle Ages (614-911 AD) never happened, and we're actually living in the 1700s. The evidence is thin, but the reasoning is entertainingly specific."
-
-AVOID: Articles about wars, diseases, or anything depressing. Celebrity bios. Anything too niche or academic. The goal is delight and wonder, not homework.
-
-LENGTH: Summary should be 3-5 sentences. Enough to satisfy curiosity, short enough to read in 15 seconds.`,
-};
+// DEFAULT_GUIDELINES imported from @shared/default-guidelines
 
 // ── References Panel ──
 
@@ -714,18 +875,41 @@ function ReferencesPanel() {
     },
   });
 
-  const upsertMutation = useMutation({
-    mutationFn: async ({ moduleKey, urls, rules }: { moduleKey: string; urls?: ModuleReference["urls"]; rules?: string }) => {
-      const res = await fetch(`/api/references/${moduleKey}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ urls, rules }),
+  const upsertRef = async ({ moduleKey, urls, rules }: { moduleKey: string; urls?: ModuleReference["urls"]; rules?: string }) => {
+    const res = await fetch(`/api/references/${moduleKey}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ urls, rules }),
+    });
+    if (!res.ok) throw new Error("Failed");
+    return res.json() as Promise<ModuleReference>;
+  };
+
+  const urlMutation = useMutation({
+    mutationFn: upsertRef,
+    onSuccess: (updated) => {
+      queryClient.setQueryData<ModuleReference[]>(["references"], (old = []) => {
+        const idx = old.findIndex((r) => r.moduleKey === updated.moduleKey);
+        if (idx >= 0) { const next = [...old]; next[idx] = updated; return next; }
+        return [...old, updated];
       });
-      if (!res.ok) throw new Error("Failed");
-      return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["references"] });
+    onError: () => {
+      toast({ title: "Failed to save URL", variant: "destructive" });
+    },
+  });
+
+  const rulesMutation = useMutation({
+    mutationFn: upsertRef,
+    onSuccess: (updated) => {
+      queryClient.setQueryData<ModuleReference[]>(["references"], (old = []) => {
+        const idx = old.findIndex((r) => r.moduleKey === updated.moduleKey);
+        if (idx >= 0) { const next = [...old]; next[idx] = updated; return next; }
+        return [...old, updated];
+      });
+    },
+    onError: () => {
+      toast({ title: "Failed to save rules", variant: "destructive" });
     },
   });
 
@@ -744,10 +928,11 @@ function ReferencesPanel() {
     if (!newUrl.trim()) return;
     const existing = getRef(moduleKey);
     const urls = [...(existing?.urls || []), { url: newUrl.trim(), label: newLabel.trim() || undefined, addedAt: new Date().toISOString() }];
-    upsertMutation.mutate({ moduleKey, urls }, {
+    const rules = existing?.rules || DEFAULT_GUIDELINES[moduleKey] || "";
+    setNewUrl("");
+    setNewLabel("");
+    urlMutation.mutate({ moduleKey, urls, rules }, {
       onSuccess: () => {
-        setNewUrl("");
-        setNewLabel("");
         toast({ title: "URL added", description: "Reference saved" });
       },
     });
@@ -757,11 +942,12 @@ function ReferencesPanel() {
     const existing = getRef(moduleKey);
     if (!existing) return;
     const urls = existing.urls.filter((_, i) => i !== index);
-    upsertMutation.mutate({ moduleKey, urls });
+    const rules = existing.rules || DEFAULT_GUIDELINES[moduleKey] || "";
+    urlMutation.mutate({ moduleKey, urls, rules });
   };
 
   const handleSaveRules = (moduleKey: string, rules: string) => {
-    upsertMutation.mutate({ moduleKey, rules }, {
+    rulesMutation.mutate({ moduleKey, rules }, {
       onSuccess: () => {
         toast({ title: "Guidelines saved", description: `${getModule(moduleKey).label} rules updated` });
       },
@@ -900,7 +1086,7 @@ function ReferencesPanel() {
                     </div>
                     <Button
                       onClick={() => handleAddUrl(selectedModule!)}
-                      disabled={!newUrl.trim()}
+                      disabled={!newUrl.trim() || urlMutation.isPending}
                       size="sm"
                       className="self-start mt-0.5"
                     >
@@ -930,13 +1116,26 @@ function ReferencesPanel() {
                   <Textarea
                     value={localRules ?? selectedRef?.rules ?? DEFAULT_GUIDELINES[selectedModule!] ?? ""}
                     onChange={(e) => setLocalRules(e.target.value)}
-                    onBlur={(e) => handleSaveRules(selectedModule!, e.target.value)}
                     className="bg-[#232326] border-[#3a3a3c] text-[#c8c8cb] placeholder:text-[#636366] font-mono text-xs leading-relaxed min-h-[400px] resize-y"
                     placeholder="Write content generation guidelines for this module..."
                   />
-                  <p className="text-[10px] text-[#636366]">
-                    Rules auto-save when you click away. Edit freely — these guide how content suggestions are generated for this module.
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] text-[#636366]">
+                      Edit freely — these guide how content suggestions are generated for this module.
+                    </p>
+                    <Button
+                      size="sm"
+                      className="h-7 px-4 text-xs font-medium"
+                      disabled={localRules === null || rulesMutation.isPending}
+                      onClick={() => {
+                        if (localRules !== null && selectedModule) {
+                          handleSaveRules(selectedModule, localRules);
+                        }
+                      }}
+                    >
+                      {rulesMutation.isPending ? "Saving…" : "Save"}
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -1081,7 +1280,7 @@ export function ContentPlanner() {
         <header className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => setActiveTab("content")}
+              onClick={() => { setActiveTab("content"); setSuggestionIndex(0); }}
               className={`text-sm font-medium pb-1 border-b-2 transition-colors ${
                 activeTab === "content"
                   ? "text-white border-white"
@@ -1200,7 +1399,7 @@ export function ContentPlanner() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(`/preview/${selectedDateStr}`, "_blank")}
+                          onClick={() => window.open(`/?date=${selectedDateStr}`, "_blank")}
                           disabled={committedCount === 0}
                           className="border-[#3a3a3c] text-[#a0a0a3] hover:text-white hover:border-[#555]"
                         >
@@ -1239,22 +1438,24 @@ export function ContentPlanner() {
             <div className="flex items-center justify-between p-6 pb-0">
               <h2 className="text-lg font-semibold" style={{ color: editingMod.bgColor }}>{editingMod.label}</h2>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={handleDiceRoll}
-                  disabled={isGenerating}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[#a0a0a3] hover:text-white hover:bg-[#3a3a3c] transition-colors disabled:opacity-40"
-                  title="Generate new suggestion"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isGenerating ? "animate-spin" : ""}>
-                    <rect x="2" y="2" width="20" height="20" rx="3" />
-                    <circle cx="8" cy="8" r="1.5" fill="currentColor" />
-                    <circle cx="16" cy="8" r="1.5" fill="currentColor" />
-                    <circle cx="8" cy="16" r="1.5" fill="currentColor" />
-                    <circle cx="16" cy="16" r="1.5" fill="currentColor" />
-                    <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-                  </svg>
-                  <span className="text-xs font-medium">{isGenerating ? "..." : "Reroll"}</span>
-                </button>
+                {editingMod.schemaKey !== "games" && (
+                  <button
+                    onClick={handleDiceRoll}
+                    disabled={isGenerating}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[#a0a0a3] hover:text-white hover:bg-[#3a3a3c] transition-colors disabled:opacity-40"
+                    title="Generate new suggestion"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isGenerating ? "animate-spin" : ""}>
+                      <rect x="2" y="2" width="20" height="20" rx="3" />
+                      <circle cx="8" cy="8" r="1.5" fill="currentColor" />
+                      <circle cx="16" cy="8" r="1.5" fill="currentColor" />
+                      <circle cx="8" cy="16" r="1.5" fill="currentColor" />
+                      <circle cx="16" cy="16" r="1.5" fill="currentColor" />
+                      <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                    </svg>
+                    <span className="text-xs font-medium">{isGenerating ? "..." : "Reroll"}</span>
+                  </button>
+                )}
                 <button onClick={closeEditor} className="text-[#a0a0a3] hover:text-white text-2xl leading-none p-1">&times;</button>
               </div>
             </div>

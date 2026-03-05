@@ -218,7 +218,6 @@ function WikiSummaryPreview({
             labelColor={COLORS.WIKI_SUMMARY.LABEL}
             isExpanded={isExpanded}
             onClose={isExpanded ? handleCollapse : handleExpand}
-            buttonColor={COLORS.WIKI_SUMMARY.BUTTON}
           />
         </div>
 
@@ -473,7 +472,6 @@ function AboveGroundPreview({
           labelColor={COLORS.ABOVE_GROUND.LABEL}
           isExpanded={isExpanded}
           onClose={isExpanded ? handleCollapse : handleExpand}
-          buttonColor={COLORS.ABOVE_GROUND.BUTTON}
         />
       </div>
 
@@ -719,7 +717,6 @@ function ThoughtExperimentPreview({
             labelColor={COLORS.THOUGHT_EXPERIMENT.LABEL}
             isExpanded={isExpanded}
             onClose={isExpanded ? handleCollapse : handleExpand}
-            buttonColor={COLORS.THOUGHT_EXPERIMENT.BUTTON}
           />
         </div>
 
@@ -867,7 +864,6 @@ function MicroHistoryPreview({
             labelColor={COLORS.MICRO_HISTORY.LABEL}
             isExpanded={isExpanded}
             onClose={isExpanded ? handleCollapse : handleExpand}
-            buttonColor={COLORS.MICRO_HISTORY.BUTTON}
           />
         </div>
 
@@ -993,7 +989,6 @@ function GamesPreview({
           labelColor={COLORS.GAMES.LABEL}
           isExpanded={isExpanded}
           onClose={isExpanded ? handleCollapse : handleExpand}
-          buttonColor={COLORS.GAMES.BUTTON}
         />
       </div>
 

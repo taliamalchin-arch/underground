@@ -5,6 +5,7 @@ import { join } from "path";
 import { storage } from "./storage";
 import { insertDailyContentSchema, MODULE_TYPES, type ModuleType } from "@shared/schema";
 import { getSuggestion, getPoolSize } from "./suggestions";
+import { getAISuggestion, invalidateModuleCache } from "./ai-suggestions";
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
@@ -33,33 +34,138 @@ export const EASING = {
   SOFT: "easeOut" as const,
 } as const;
 
-// ── Spring Configs (tuned in AnimationLab) ──
+// ═══════════════════════════════════════════════════════
+// PARENT SPRING CONFIG — single source of truth
+// Change these to adjust the feel of ALL modules at once
+// ═══════════════════════════════════════════════════════
 
-export const SPRING = {
-  // Card open/close — the overall card resizing
-  CONTAINER: {
+export const PARENT_SPRING = {
+  expand: {
     type: "spring" as const,
     damping: ${spring.container.damping},
     mass: ${spring.container.mass},
     stiffness: ${spring.container.stiffness},
   },
-  // Title/element reposition — elements sliding within the card
-  REPOSITION: {
+  contentEnter: {
+    type: "spring" as const,
+    damping: 40,
+    mass: 0.4,
+    stiffness: 300,
+  },
+  contentExit: {
+    type: "spring" as const,
+    damping: 40,
+    mass: 0.3,
+    stiffness: 500,
+  },
+  teaserFade: {
+    type: "spring" as const,
+    damping: 40,
+    mass: 0.4,
+    stiffness: 350,
+  },
+  reposition: {
     type: "spring" as const,
     damping: ${spring.reposition.damping},
     mass: ${spring.reposition.mass},
     stiffness: ${spring.reposition.stiffness},
   },
+  contentYOffset: ${contentTiming.enter.yOffset},
+  contentStagger: 0,
 } as const;
 
-// ── Content Timing (tuned in AnimationLab) ──
+// ═══════════════════════════════════════════════════════
+// PER-MODULE OVERRIDES — only specify what differs
+// ═══════════════════════════════════════════════════════
+
+export type ModuleName =
+  | "aboveGround"
+  | "thoughtExperiment"
+  | "microHistory"
+  | "wikiSummary"
+  | "games";
+
+type SpringConfig = {
+  type?: "spring";
+  damping?: number;
+  mass?: number;
+  stiffness?: number;
+};
+
+export type ModuleOverride = {
+  expand?: SpringConfig;
+  contentEnter?: SpringConfig;
+  contentExit?: SpringConfig;
+  teaserFade?: SpringConfig;
+  reposition?: SpringConfig;
+  contentYOffset?: number;
+  contentStagger?: number;
+};
+
+export const MODULE_OVERRIDES: Record<ModuleName, ModuleOverride> = {
+  aboveGround: {
+    reposition: {
+      type: "spring",
+      damping: 60,
+      mass: 0.5,
+      stiffness: 410,
+    },
+  },
+  thoughtExperiment: {},
+  microHistory: {},
+  wikiSummary: { contentStagger: 0.08 },
+  games: {},
+};
+
+// ═══════════════════════════════════════════════════════
+// HELPER — get merged config for a module
+// ═══════════════════════════════════════════════════════
+
+type SpringTransition = {
+  type: "spring";
+  damping: number;
+  mass: number;
+  stiffness: number;
+};
+
+export interface ModuleAnimationConfig {
+  expand: SpringTransition;
+  contentEnter: SpringTransition;
+  contentExit: SpringTransition;
+  teaserFade: SpringTransition;
+  reposition: SpringTransition;
+  contentYOffset: number;
+  contentStagger: number;
+}
+
+export function getModuleConfig(moduleName: ModuleName): ModuleAnimationConfig {
+  const overrides = MODULE_OVERRIDES[moduleName] || {};
+  return {
+    expand: { ...PARENT_SPRING.expand, ...overrides.expand },
+    contentEnter: { ...PARENT_SPRING.contentEnter, ...overrides.contentEnter },
+    contentExit: { ...PARENT_SPRING.contentExit, ...overrides.contentExit },
+    teaserFade: { ...PARENT_SPRING.teaserFade, ...overrides.teaserFade },
+    reposition: { ...PARENT_SPRING.reposition, ...overrides.reposition },
+    contentYOffset: overrides.contentYOffset ?? PARENT_SPRING.contentYOffset,
+    contentStagger: overrides.contentStagger ?? PARENT_SPRING.contentStagger,
+  };
+}
+
+// ═══════════════════════════════════════════════════════
+// LEGACY BRIDGE — keeps AnimationDialKit/AnimationLab working
+// ═══════════════════════════════════════════════════════
+
+export const SPRING = {
+  CONTAINER: PARENT_SPRING.expand,
+  REPOSITION: PARENT_SPRING.reposition,
+} as const;
 
 export const CONTENT_TIMING = {
   enter: {
     delay: ${contentTiming.enter.delay},
     duration: ${contentTiming.enter.duration},
     stagger: ${contentTiming.enter.stagger},
-    yOffset: ${contentTiming.enter.yOffset},
+    yOffset: PARENT_SPRING.contentYOffset,
   },
   exit: {
     duration: ${contentTiming.exit.duration},
@@ -71,39 +177,6 @@ export const CONTENT_TIMING = {
   headlineSlide: {
     duration: ${contentTiming.headlineSlide.duration},
   },
-} as const;
-
-// ── Framer Motion Presets ──
-
-export const MOTION_PRESETS = {
-  // Card layout animation — spring-based
-  cardTransition: SPRING.CONTAINER,
-  // Content fading in after card opens
-  contentEnter: {
-    duration: CONTENT_TIMING.enter.duration,
-    delay: CONTENT_TIMING.enter.delay,
-    ease: EASING.SOFT,
-  },
-  // Content disappearing on card close
-  contentExit: {
-    duration: CONTENT_TIMING.exit.duration,
-  },
-  // Button press feedback
-  buttonPress: {
-    duration: DURATION.QUICK,
-    ease: EASING.STANDARD,
-  },
-} as const;
-
-// CSS Variable Exports (for use in CSS files)
-export const CSS_TIMING_VARS = {
-  '--duration-instant': \`\${DURATION.INSTANT}s\`,
-  '--duration-quick': \`\${DURATION.QUICK}s\`,
-  '--duration-standard': \`\${DURATION.STANDARD}s\`,
-  '--duration-card': \`\${DURATION.CARD}s\`,
-  '--duration-slow': \`\${DURATION.SLOW}s\`,
-  '--ease-sharp': 'cubic-bezier(0.4, 0, 0.15, 1)',
-  '--ease-standard': 'cubic-bezier(0.4, 0, 0.2, 1)',
 } as const;
 `;
 
@@ -143,6 +216,58 @@ export const CSS_TIMING_VARS = {
     } catch (error) {
       console.error("Failed to save typography:", error);
       res.status(500).json({ error: "Failed to save typography config" });
+    }
+  });
+
+  // ── Games Config API ──
+
+  app.get("/api/games-config", async (_req, res) => {
+    try {
+      const configPath = join(process.cwd(), "client/src/data/games-config.json");
+      const raw = await readFile(configPath, "utf-8");
+      res.json(JSON.parse(raw));
+    } catch {
+      res.json({ games: [], library: [] });
+    }
+  });
+
+  app.put("/api/games-config", async (req, res) => {
+    try {
+      const { games, library } = req.body;
+      if (!Array.isArray(games)) {
+        return res.status(400).json({ error: "games array required" });
+      }
+      const configPath = join(process.cwd(), "client/src/data/games-config.json");
+      const data: Record<string, any> = { games };
+      if (Array.isArray(library)) data.library = library;
+      else {
+        // Preserve existing library if not provided
+        try {
+          const existing = JSON.parse(await readFile(configPath, "utf-8"));
+          data.library = existing.library || [];
+        } catch { data.library = []; }
+      }
+      await writeFile(configPath, JSON.stringify(data, null, 2), "utf-8");
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to save games config:", error);
+      res.status(500).json({ error: "Failed to save games config" });
+    }
+  });
+
+  app.post("/api/games/upload", async (req, res) => {
+    try {
+      const { filename, code } = req.body;
+      if (!filename || !code) {
+        return res.status(400).json({ error: "filename and code required" });
+      }
+      const safeName = filename.replace(/[^a-zA-Z0-9_-]/g, "") + ".tsx";
+      const gamePath = join(process.cwd(), "client/src/components/games", safeName);
+      await writeFile(gamePath, code, "utf-8");
+      res.json({ success: true, filename: safeName });
+    } catch (error) {
+      console.error("Failed to upload game:", error);
+      res.status(500).json({ error: "Failed to upload game" });
     }
   });
 
@@ -290,14 +415,22 @@ export const CSS_TIMING_VARS = {
       const date = (req.query.date as string) || new Date().toISOString().split("T")[0];
       const index = parseInt(req.query.index as string) || 0;
 
-      const suggestion = await getSuggestion(moduleKey, date, index);
-      if (!suggestion) {
-        return res.status(404).json({ error: "No suggestions for this module" });
+      try {
+        const { suggestion, isAI } = await getAISuggestion(moduleKey, date, index);
+        if (!suggestion) {
+          return res.status(404).json({ error: "No suggestions for this module" });
+        }
+        res.json({ suggestion, index, isAI });
+      } catch (aiError) {
+        // AI failed — fall back to static pools
+        console.error("AI suggestion failed, falling back to static:", aiError);
+        const suggestion = await getSuggestion(moduleKey, date, index);
+        if (!suggestion) {
+          return res.status(404).json({ error: "No suggestions for this module" });
+        }
+        const poolSize = getPoolSize(moduleKey, date);
+        res.json({ suggestion, poolSize, index: index % poolSize, isAI: false });
       }
-
-      const poolSize = getPoolSize(moduleKey, date);
-
-      res.json({ suggestion, poolSize, index: index % poolSize });
     } catch (error) {
       res.status(500).json({ error: "Failed to generate suggestion" });
     }
@@ -333,6 +466,8 @@ export const CSS_TIMING_VARS = {
     try {
       const { urls, rules } = req.body;
       const ref = await storage.upsertModuleReference(req.params.moduleKey, { urls, rules });
+      // Clear suggestion cache so new rules/references take effect immediately
+      invalidateModuleCache(req.params.moduleKey);
       res.json(ref);
     } catch (error) {
       res.status(500).json({ error: "Failed to save reference" });

@@ -4,7 +4,6 @@ interface CardHeaderProps {
   accentColor?: string;
   isExpanded: boolean;
   onClose?: () => void;
-  buttonColor?: string;
   showButton?: boolean;
 }
 

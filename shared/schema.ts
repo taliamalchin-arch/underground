@@ -1,21 +1,6 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, boolean, jsonb } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
+import { pgTable, text, varchar, jsonb } from "drizzle-orm/pg-core";
 import { z } from "zod";
-
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-});
-
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-});
-
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
 
 // Module types for the content planner
 export const MODULE_TYPES = [
@@ -151,3 +136,22 @@ export const moduleReferenceSchema = z.object({
 
 export type ModuleReferenceUrl = z.infer<typeof moduleReferenceUrlSchema>;
 export type ModuleReference = z.infer<typeof moduleReferenceSchema>;
+
+// ── Drizzle pgTable definitions ──
+
+export const dailyContent = pgTable("daily_content", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  date: text("date").notNull().unique(),
+  status: text("status").notNull().default("draft"),
+  modules: jsonb("modules").notNull().default({}),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const moduleReferences = pgTable("module_references", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  moduleKey: text("module_key").notNull().unique(),
+  urls: jsonb("urls").notNull().default([]),
+  rules: text("rules").notNull().default(""),
+  updatedAt: text("updated_at").notNull(),
+});

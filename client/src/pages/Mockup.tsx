@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
+import { useState, useRef, useEffect, useCallback, useLayoutEffect, useMemo } from "react";
 import { motion, AnimatePresence, useMotionValue, animate } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { GamesCard } from "@/components/games/GamesCard";
 import { IntroAnimation } from "@/components/IntroAnimation";
@@ -7,14 +8,15 @@ import { COLORS } from "@/lib/colors";
 import { getModuleConfig, CONTENT_TIMING } from "@/lib/timing";
 import { CardHeader } from "@/components/ui/card-header";
 import { DotNavigator } from "@/components/ui/dot-navigator";
+import type { DailyContent } from "@shared/schema";
 
 // Dynamic Date Header Component
-const DateHeader = () => {
-  const now = new Date();
+const DateHeader = ({ dateStr }: { dateStr?: string }) => {
+  const now = dateStr ? new Date(dateStr + "T12:00:00") : new Date();
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const [fontSize, setFontSize] = useState(48);
-  
+
   const month = now.toLocaleDateString('en-US', { month: 'long' });
   const day = now.getDate();
   const year = now.getFullYear();
@@ -116,13 +118,18 @@ const AboveGroundCard = ({
   forcedQuarter,
   onExpand,
   onCollapse,
+  items,
+  expandedHeight: expandedHeightProp,
 }: {
   isExpanded: boolean;
   forcedQuarter?: boolean;
   onExpand: () => void;
   onCollapse: () => void;
+  items?: typeof NEWS_ITEMS;
+  expandedHeight?: number;
 }) => {
   const anim = getModuleConfig("aboveGround");
+  const newsItems = items || NEWS_ITEMS;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
   const [isDragging, setIsDragging] = useState(false);
@@ -134,7 +141,7 @@ const AboveGroundCard = ({
 
   const isQuarter = forcedQuarter || false;
   const collapsedHeight = 190;
-  const expandedHeight = 380;
+  const expandedHeight = expandedHeightProp || 380;
 
   const handleClose = () => {
     onCollapse();
@@ -147,7 +154,7 @@ const AboveGroundCard = ({
   };
 
   const goToIndex = useCallback((index: number, dir?: number) => {
-    const totalItems = NEWS_ITEMS.length;
+    const totalItems = newsItems.length;
     const newIndex = ((index % totalItems) + totalItems) % totalItems;
     if (dir !== undefined) {
       setDirection(dir);
@@ -165,10 +172,10 @@ const AboveGroundCard = ({
     }
     autoRotateRef.current = setInterval(() => {
       setDirection(1);
-      setCurrentIndex(prev => (prev + 1) % NEWS_ITEMS.length);
+      setCurrentIndex(prev => (prev + 1) % newsItems.length);
     }, 4000);
     return () => { if (autoRotateRef.current) clearInterval(autoRotateRef.current); };
-  }, [isExpanded]);
+  }, [isExpanded, newsItems.length]);
 
   // Reset auto-rotate timer on manual navigation
   const resetAutoRotate = useCallback(() => {
@@ -176,7 +183,7 @@ const AboveGroundCard = ({
     if (autoRotateRef.current) clearInterval(autoRotateRef.current);
     autoRotateRef.current = setInterval(() => {
       setDirection(1);
-      setCurrentIndex(prev => (prev + 1) % NEWS_ITEMS.length);
+      setCurrentIndex(prev => (prev + 1) % newsItems.length);
     }, 4000);
   }, [isExpanded]);
 
@@ -216,7 +223,7 @@ const AboveGroundCard = ({
   const handleMouseUp = () => handleDragEnd();
   const handleMouseLeave = () => { if (isDragging) handleDragEnd(); };
 
-  const currentNews = NEWS_ITEMS[currentIndex];
+  const currentNews = newsItems[currentIndex];
 
   // Swipe animation variants for headline rotation
   const slideVariants = {
@@ -254,7 +261,6 @@ const AboveGroundCard = ({
             accentColor={COLORS.ABOVE_GROUND.BACKGROUND}
             isExpanded={false}
             onClose={onExpand}
-            buttonColor={COLORS.ABOVE_GROUND.BUTTON}
           />
           <div className="flex-1 flex items-end overflow-hidden">
             <div className="w-full relative" style={{ height: 'calc(var(--text-headline) * var(--leading-tight) * 2)' }}>
@@ -311,14 +317,13 @@ const AboveGroundCard = ({
       onMouseUp={!isExpanded ? handleMouseUp : undefined}
       onMouseLeave={!isExpanded ? handleMouseLeave : undefined}
     >
-      <div style={{ flexShrink: 0 }}>
+      <div style={{ flexShrink: 0, position: 'relative', zIndex: 1 }}>
         <CardHeader
           label="ABOVE GROUND"
           labelColor={COLORS.THEME.LABEL_TEXT}
           accentColor={COLORS.ABOVE_GROUND.BACKGROUND}
           isExpanded={isExpanded}
           onClose={isExpanded ? handleClose : onExpand}
-          buttonColor={COLORS.ABOVE_GROUND.BUTTON}
         />
       </div>
 
@@ -330,7 +335,7 @@ const AboveGroundCard = ({
           gap: isExpanded ? 'var(--card-gap)' : 'calc(var(--card-gap) * 0.5)',
           overflow: 'hidden',
           flex: 1,
-          marginTop: isExpanded ? '-30px' : undefined,
+          marginTop: undefined,
         }}
       >
         {/* Title — container handles layout positioning (expand/collapse), content swipes (navigation) */}
@@ -423,7 +428,7 @@ const AboveGroundCard = ({
           animate={{ opacity: isExpanded ? 1 : 1 }}
           transition={{ duration: 0.2 }}
         >
-          <DotNavigator count={NEWS_ITEMS.length} activeIndex={currentIndex} onSelect={goToIndex} />
+          <DotNavigator count={newsItems.length} activeIndex={currentIndex} onSelect={goToIndex} />
         </motion.div>
       </div>
     </motion.div>
@@ -460,7 +465,7 @@ const BottleCapBack = ({ fact, dayNumber }: { fact: string; dayNumber: string })
         {/* Arc path for curved text at BOTTOM - curves downward, inside the white ring with padding */}
         <path
           id="bottomArcPath"
-          d="M 200 550 A 280 280 0 0 0 700 550"
+          d="M 200 550 A 260 260 0 0 0 700 550"
           fill="none"
         />
       </defs>
@@ -468,20 +473,19 @@ const BottleCapBack = ({ fact, dayNumber }: { fact: string; dayNumber: string })
       {/* PNG image for back cap background */}
       <image href="/figmaAssets/factle-back.svg" width="900" height="900" />
 
-      {/* Center fact text - large and prominent, narrower width, taller */}
+      {/* Center fact text - body copy style (type-reading) */}
       <text
         x="450"
         y="360"
         textAnchor="middle"
         fill={COLORS.FACTLE.CAP_TEXT_DARK}
-        fontSize="63"
-        fontFamily="Satoshi-Bold, Helvetica, sans-serif"
-        fontWeight="700"
-        letterSpacing="-2.1"
-        lineHeight="1.2"
+        fontSize="80"
+        fontFamily="Satoshi-Regular, Helvetica, sans-serif"
+        fontWeight="400"
+        letterSpacing="-0.7"
       >
         <tspan x="450" dy="0">{line1}</tspan>
-        <tspan x="450" dy="69">{line2}</tspan>
+        <tspan x="450" dy="88">{line2}</tspan>
       </text>
 
       {/* Curved text at BOTTOM - UNDERGROUND FACT # */}
@@ -491,7 +495,6 @@ const BottleCapBack = ({ fact, dayNumber }: { fact: string; dayNumber: string })
         fontFamily="Sora, sans-serif"
         fontWeight="700"
         letterSpacing="4"
-        lineHeight="1.2"
       >
         <textPath xlinkHref="#bottomArcPath" startOffset="50%" textAnchor="middle">
           UNDERGROUND FACT #{dayNumber}
@@ -501,9 +504,9 @@ const BottleCapBack = ({ fact, dayNumber }: { fact: string; dayNumber: string })
   );
 };
 
-const FactleFlipCard = () => {
+const FactleFlipCard = ({ fact: factProp }: { fact?: string }) => {
   const [isFlipped, setIsFlipped] = useState(false);
-  const fact = "Sharks are older than trees";
+  const fact = factProp || "Sharks are older than trees";
   const dayNumber = getFactleDayNumber();
 
   return (
@@ -576,12 +579,14 @@ const ThoughtExperimentCard = ({
   isExpanded,
   onExpand,
   onCollapse,
+  text,
 }: {
   isExpanded: boolean;
   onExpand: () => void;
   onCollapse: () => void;
+  text?: string;
 }) => {
-  const fullText = "Imagine a world where every object slowly changes shape when no one is looking, but returns to normal the moment it's observed. Nothing ever breaks or malfunctions — it's simply different when unseen. Would the unseen version of the world feel less real, or more honest?";
+  const fullText = text || "Imagine a world where every object slowly changes shape when no one is looking, but returns to normal the moment it's observed. Nothing ever breaks or malfunctions — it's simply different when unseen. Would the unseen version of the world feel less real, or more honest?";
 
   return (
     <div
@@ -606,7 +611,6 @@ const ThoughtExperimentCard = ({
           accentColor={COLORS.THOUGHT_EXPERIMENT.BACKGROUND}
           isExpanded={isExpanded}
           onClose={isExpanded ? onCollapse : onExpand}
-          buttonColor={COLORS.THOUGHT_EXPERIMENT.BUTTON}
         />
       </div>
 
@@ -644,24 +648,33 @@ const MicroHistoryCard = ({
   isExpanded,
   onExpand,
   onCollapse,
+  titleProp,
+  contentProp,
 }: {
   isExpanded: boolean;
   onExpand: () => void;
   onCollapse: () => void;
+  titleProp?: string;
+  contentProp?: string;
 }) => {
   const anim = getModuleConfig("microHistory");
-  const title = "Why notebooks are usually lined";
-  const collapsedText = "Early mass-produced paper varied in quality, and lines helped guide handwriting when ink bled easily. The ruled lines became standard not just for aesthetics, but as a practical solution to inconsistent paper thickness and texture.";
-  const fullText = "Early mass-produced paper varied in quality, and lines helped guide handwriting when ink bled easily. The ruled lines became standard not just for aesthetics, but as a practical solution to inconsistent paper thickness and texture. Before mass production, paper was handmade and varied greatly in quality. Writers needed guides to keep their text straight and legible, especially when using fountain pens that could bleed or feather on lower-quality paper.";
+  const title = titleProp || "Why notebooks are usually lined";
+  const fullText = contentProp || "Early mass-produced paper varied in quality, and lines helped guide handwriting when ink bled easily. The ruled lines became standard not just for aesthetics, but as a practical solution to inconsistent paper thickness and texture. Before mass production, paper was handmade and varied greatly in quality. Writers needed guides to keep their text straight and legible, especially when using fountain pens that could bleed or feather on lower-quality paper.";
 
   const measureRef = useRef<HTMLDivElement>(null);
   const [expandedHeight, setExpandedHeight] = useState(400);
   const collapsedHeight = 190;
 
   useLayoutEffect(() => {
-    if (measureRef.current) {
-      setExpandedHeight(measureRef.current.offsetHeight);
-    }
+    const measure = () => {
+      if (measureRef.current && measureRef.current.offsetHeight > 0) {
+        setExpandedHeight(measureRef.current.offsetHeight);
+      }
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    if (measureRef.current) observer.observe(measureRef.current);
+    return () => observer.disconnect();
   }, []);
 
   return (
@@ -710,7 +723,6 @@ const MicroHistoryCard = ({
             accentColor={COLORS.MICRO_HISTORY.BACKGROUND}
             isExpanded={isExpanded}
             onClose={isExpanded ? onCollapse : onExpand}
-            buttonColor={COLORS.MICRO_HISTORY.BUTTON}
           />
         </div>
 
@@ -766,13 +778,17 @@ const WikiSummaryCard = ({
   isExpanded,
   onExpand,
   onCollapse,
+  articleTitleProp,
+  summaryProp,
 }: {
   isExpanded: boolean;
   onExpand: () => void;
   onCollapse: () => void;
+  articleTitleProp?: string;
+  summaryProp?: string;
 }) => {
   const anim = getModuleConfig("wikiSummary");
-  const articleTitle = "The Amber Room";
+  const articleTitle = articleTitleProp || "The Amber Room";
   const scrollRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
@@ -781,7 +797,7 @@ const WikiSummaryCard = ({
   const titleY = useMotionValue(0);
   const yOffsetRef = useRef(0);
 
-  const sections = [
+  const defaultSections = [
     {
       heading: "A Room Made of Sunlight",
       body: "In 1701, King Frederick I of Prussia commissioned something the world had never seen: an entire chamber paneled in amber. German baroque sculptor Andreas Schl\u00FCter drew the designs, and Danish craftsman Gottfried Wolfram began the painstaking assembly\u2014fitting thousands of hand-carved amber pieces, backed with gold leaf and mirrors, into elaborate mosaics. The work took over a decade. By the time it was installed in the Berlin City Palace, the room glowed like trapped sunlight, six tonnes of fossilized resin transformed into walls."
@@ -803,6 +819,10 @@ const WikiSummaryCard = ({
       body: "In 1979, the Soviet government authorized a full reconstruction. It took 24 years. Forty Russian and German master craftsmen carved new amber panels by hand, working from black-and-white photographs and a single surviving color slide. German energy company E.ON donated $3.5 million to help finish the project. In 2003, Russian president Vladimir Putin and German chancellor Gerhard Schr\u00F6der dedicated the completed room at the Catherine Palace\u2014exactly 300 years after the city of St. Petersburg was founded. The replica glows the same warm gold. The original, wherever it is, has never been found."
     },
   ];
+
+  const sections = summaryProp
+    ? [{ heading: "", body: summaryProp }]
+    : defaultSections;
 
   // Measure expanded height + compute collapsed title y-offset
   useLayoutEffect(() => {
@@ -874,6 +894,7 @@ const WikiSummaryCard = ({
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
+          gap: 'var(--card-gap)',
         }}
         initial={false}
         animate={{ height: isExpanded ? expandedHeight : collapsedHeight }}
@@ -887,7 +908,6 @@ const WikiSummaryCard = ({
             accentColor={COLORS.WIKI_SUMMARY.BACKGROUND}
             isExpanded={isExpanded}
             onClose={isExpanded ? onCollapse : onExpand}
-            buttonColor={COLORS.WIKI_SUMMARY.BUTTON}
           />
         </div>
 
@@ -901,7 +921,7 @@ const WikiSummaryCard = ({
           }}
         >
           {/* Title + sections share a column with gap */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'calc(var(--card-gap) * 1.5)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'calc(var(--card-gap) * 0.4)' }}>
             {/* Title — y driven by useMotionValue, synced with card spring */}
             <motion.div
               ref={titleRef}
@@ -1023,13 +1043,6 @@ function createScratchBrush(): Promise<HTMLCanvasElement> {
   });
 }
 
-function lightenHex(hex: string, factor: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgb(${Math.round(r + (255 - r) * factor)}, ${Math.round(g + (255 - g) * factor)}, ${Math.round(b + (255 - b) * factor)})`;
-}
-
 // Quarter Card - Scratch-off reveal
 const RevealCard = ({
   category,
@@ -1087,11 +1100,11 @@ const RevealCard = ({
     // To verify: search MEMORY.md for "canvas module check".
     // DO NOT change these to "standard" canvas defaults — they are intentional.
     //   CSS source                        Canvas constant
-    //   --text-headline: 22px * scale  →  TYPE_HEADLINE_BASE_PX  = 22
+    //   --text-headline: 18px * scale  →  TYPE_HEADLINE_BASE_PX  = 18
     //   --tracking-tight: -0.04em      →  TYPE_HEADLINE_TRACKING = -0.04
     //   --leading-headline: 1.15       →  TYPE_HEADLINE_LEADING  = 1.15
     // ═══════════════════════════════════════════════════════════════════════
-    const TYPE_HEADLINE_BASE_PX  = 22;   // --text-headline base (before scale)
+    const TYPE_HEADLINE_BASE_PX  = 18;   // --text-headline base (before scale)
     const TYPE_HEADLINE_TRACKING = -0.04; // --tracking-tight in em
     const TYPE_HEADLINE_LEADING  = 1.15;  // --leading-headline
 
@@ -1503,129 +1516,25 @@ const RevealCard = ({
   );
 };
 
-// Half Card - Text variant (404x190 in Figma)
-const HalfTextCard = ({
-  category,
-  categoryColor,
-  accentColor,
-  content,
-  bgColor,
-}: {
-  category: string;
-  categoryColor: string;
-  accentColor?: string;
-  content: React.ReactNode;
-  bgColor: string;
-}) => (
-  <Card
-    className="w-full border-0 flex flex-col justify-between card-neumorphic"
-    style={{
-      aspectRatio: "404/190",
-      borderRadius: 'var(--card-radius)',
-      padding: 'var(--card-padding)',
-      backgroundColor: bgColor,
-    }}
-  >
-    <CardContent className="p-0 w-full h-full flex flex-col justify-between">
-      <div className="flex items-center" style={{ height: 'var(--close-btn-size)', gap: 'calc(var(--text-label) * 0.6)' }}>
-        {accentColor && (
-          <div
-            className="rounded-full flex-shrink-0"
-            style={{
-              width: 'calc(var(--text-label) * 0.8)',
-              height: 'calc(var(--text-label) * 0.8)',
-              backgroundColor: accentColor,
-            }}
-          />
-        )}
-        <div
-          className="type-label"
-          style={{ color: categoryColor }}
-        >
-          {category}
-        </div>
-      </div>
-      <div className="type-headline line-clamp-4" style={{ color: COLORS.THEME.HEADLINE_TEXT }}>
-        {content}
-      </div>
-    </CardContent>
-  </Card>
-);
-
-// Half Card - Images variant (404x190 in Figma)
-const HalfImagesCard = ({
-  category,
-  categoryColor,
-  accentColor,
-  bgColor,
-  images,
-  placeholders,
-}: {
-  category: string;
-  categoryColor: string;
-  accentColor?: string;
-  bgColor: string;
-  images?: string[];
-  placeholders?: boolean;
-}) => (
-  <Card
-    className="w-full border-0 flex flex-col card-neumorphic"
-    style={{
-      aspectRatio: "404/190",
-      borderRadius: 'var(--card-radius)',
-      padding: 'var(--card-padding)',
-      backgroundColor: bgColor,
-    }}
-  >
-    <CardContent className="p-0 w-full h-full flex flex-col justify-between">
-      <div className="flex items-center" style={{ height: 'var(--close-btn-size)', gap: 'calc(var(--text-label) * 0.6)' }}>
-        {accentColor && (
-          <div
-            className="rounded-full flex-shrink-0"
-            style={{
-              width: 'calc(var(--text-label) * 0.8)',
-              height: 'calc(var(--text-label) * 0.8)',
-              backgroundColor: accentColor,
-            }}
-          />
-        )}
-        <div
-          className="type-label"
-          style={{ color: categoryColor }}
-        >
-          {category}
-        </div>
-      </div>
-      <div
-        className="flex flex-1 justify-center items-center"
-        style={{ gap: 'var(--card-gap)' }}
-      >
-        {placeholders
-          ? [1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="flex-1 aspect-square bg-gradient-to-b from-white to-transparent"
-                style={{ borderRadius: 'var(--image-radius)', maxWidth: '116px' }}
-              />
-            ))
-          : images?.map((src, i) => (
-              <img
-                key={i}
-                className="flex-1 aspect-square object-cover"
-                alt={`Image ${i + 1}`}
-                src={src}
-                style={{ borderRadius: 'var(--image-radius)', maxWidth: '116px' }}
-              />
-            ))}
-      </div>
-    </CardContent>
-  </Card>
-);
-
 export const Mockup = (): JSX.Element => {
+  // Optional ?date= param to load content from API (for ContentPlanner preview)
+  const dateParam = useMemo(() => new URLSearchParams(window.location.search).get("date"), []);
+
+  const { data: apiContent } = useQuery<DailyContent>({
+    queryKey: ["content", dateParam],
+    queryFn: async () => {
+      const res = await fetch(`/api/content/date/${dateParam}`);
+      if (!res.ok) throw new Error("Failed to fetch content");
+      return res.json();
+    },
+    enabled: !!dateParam,
+  });
+
+  const modules = apiContent?.modules;
+
   // Global expand state: null = none expanded, 'aboveGround' = Above Ground expanded, 'thoughtExperiment' = Thought Experiment expanded, 'games' = Games expanded, 'microHistory' = Micro History expanded, 'wikiSummary' = Wiki Summary expanded
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
-  const [showIntro, setShowIntro] = useState(true);
+  const [showIntro, setShowIntro] = useState(!dateParam);
   const [scale, setScale] = useState(1);
 
   const isThoughtExperimentExpanded = expandedCard === 'thoughtExperiment';
@@ -1637,9 +1546,11 @@ export const Mockup = (): JSX.Element => {
   // ─── Layout measurements for absolute-position card animation ───
   const teLayoutRef = useRef<HTMLDivElement>(null);
   const teMeasureRef = useRef<HTMLDivElement>(null);
+  const agMeasureRef = useRef<HTMLDivElement>(null);
   const [teLayoutWidth, setTeLayoutWidth] = useState(392);
   const [layoutGap, setLayoutGap] = useState(14);
   const [teFullHeight, setTeFullHeight] = useState(280);
+  const [agExpandedHeight, setAgExpandedHeight] = useState(380);
 
   useLayoutEffect(() => {
     const measure = () => {
@@ -1655,17 +1566,28 @@ export const Mockup = (): JSX.Element => {
       if (teMeasureRef.current && teMeasureRef.current.offsetHeight > 0) {
         setTeFullHeight(teMeasureRef.current.offsetHeight);
       }
+      // Measure tallest AG expanded item
+      if (agMeasureRef.current) {
+        const itemEls = agMeasureRef.current.children;
+        let maxH = 0;
+        for (let i = 0; i < itemEls.length; i++) {
+          const h = (itemEls[i] as HTMLElement).offsetHeight;
+          if (h > maxH) maxH = h;
+        }
+        if (maxH > 0) setAgExpandedHeight(maxH);
+      }
     };
     measure();
     const observer = new ResizeObserver(measure);
     if (teLayoutRef.current) observer.observe(teLayoutRef.current);
+    if (teMeasureRef.current) observer.observe(teMeasureRef.current);
     return () => observer.disconnect();
   }, []);
 
   // Computed positions for absolute-position card layout
   const halfW = (teLayoutWidth - layoutGap) / 2;
   const qH = 190;
-  const agExpandedH = 380;
+  const agExpandedH = agExpandedHeight;
   const teSpring = getModuleConfig("thoughtExperiment").expand;
 
   const agH = isAboveGroundExpanded ? agExpandedH : qH;
@@ -1735,7 +1657,7 @@ export const Mockup = (): JSX.Element => {
         }}
       >
         {/* Header - Dynamic Date */}
-        <DateHeader />
+        <DateHeader dateStr={dateParam || undefined} />
 
         {/* AboveGround / Factle / ThoughtExperiment — absolute-position layout */}
         <div ref={teLayoutRef} style={{ position: 'relative', width: '100%' }}>
@@ -1754,7 +1676,62 @@ export const Mockup = (): JSX.Element => {
               isExpanded={true}
               onExpand={() => {}}
               onCollapse={() => {}}
+              text={modules?.thoughtExperiment ? (modules.thoughtExperiment as any).text : undefined}
             />
+          </div>
+
+          {/* Hidden measurement for AG expanded height — renders each item to find tallest */}
+          <div
+            ref={agMeasureRef}
+            aria-hidden
+            style={{
+              position: 'absolute',
+              visibility: 'hidden',
+              width: '100%',
+              pointerEvents: 'none',
+            }}
+          >
+            {(modules?.aboveGround ? (modules.aboveGround as any).items?.map((item: any) => ({
+              headline: item.headline,
+              description: item.description,
+              description2: item.description || "",
+              source: item.source,
+            })) : NEWS_ITEMS).map((item: any, i: number) => (
+              <div
+                key={i}
+                style={{
+                  padding: 'var(--card-padding)',
+                  paddingBottom: 'calc(var(--card-padding) - 5px)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 'var(--card-gap)',
+                }}
+              >
+                <div style={{ flexShrink: 0 }}>
+                  <CardHeader
+                    label="ABOVE GROUND"
+                    labelColor={COLORS.THEME.LABEL_TEXT}
+                    accentColor={COLORS.ABOVE_GROUND.BACKGROUND}
+                    isExpanded={true}
+                    onClose={() => {}}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--card-gap)' }}>
+                  <div className="type-headline" style={{ flexShrink: 0 }}>
+                    {item.headline}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--card-gap)' }}>
+                    <div className="type-reading">
+                      <p>{item.description}</p>
+                      <p className="mt-2 opacity-80">{item.description2}</p>
+                    </div>
+                  </div>
+                  <div style={{ flexShrink: 0, marginTop: 8 }}>
+                    <DotNavigator count={5} activeIndex={0} onSelect={() => {}} />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
 
           <motion.div
@@ -1781,6 +1758,13 @@ export const Mockup = (): JSX.Element => {
                 forcedQuarter={isThoughtExperimentExpanded}
                 onExpand={() => setExpandedCard('aboveGround')}
                 onCollapse={() => setExpandedCard(null)}
+                expandedHeight={agExpandedHeight}
+                items={modules?.aboveGround ? (modules.aboveGround as any).items?.map((item: any) => ({
+                  headline: item.headline,
+                  description: item.description,
+                  description2: item.description || "",
+                  source: item.source,
+                })) : undefined}
               />
             </motion.div>
 
@@ -1797,7 +1781,7 @@ export const Mockup = (): JSX.Element => {
                 zIndex: 2,
               }}
             >
-              <FactleFlipCard />
+              <FactleFlipCard fact={modules?.factle ? (modules.factle as any).fact : undefined} />
             </motion.div>
 
             {/* ThoughtExperiment */}
@@ -1817,6 +1801,7 @@ export const Mockup = (): JSX.Element => {
                 isExpanded={isThoughtExperimentExpanded}
                 onExpand={() => setExpandedCard('thoughtExperiment')}
                 onCollapse={() => setExpandedCard(null)}
+                text={modules?.thoughtExperiment ? (modules.thoughtExperiment as any).text : undefined}
               />
             </motion.div>
           </motion.div>
@@ -1836,8 +1821,8 @@ export const Mockup = (): JSX.Element => {
               category="TRIVIA"
               categoryColor={COLORS.THEME.LABEL_TEXT}
               accentColor={COLORS.TRIVIA.BACKGROUND}
-              question={TRIVIA_DATA.question}
-              answer={TRIVIA_DATA.answer}
+              question={modules?.trivia ? (modules.trivia as any).question : TRIVIA_DATA.question}
+              answer={modules?.trivia ? (modules.trivia as any).answer : TRIVIA_DATA.answer}
               bgColor={COLORS.THEME.CARD_BG}
             />
           </div>
@@ -1846,13 +1831,13 @@ export const Mockup = (): JSX.Element => {
               category={
                 <>
                   <span style={{ color: COLORS.THEME.LABEL_TEXT }}>ON THIS DAY</span>
-                  <span style={{ color: COLORS.THEME.CAPTION_TEXT }} className="ml-2">2007</span>
+                  <span style={{ color: COLORS.THEME.CAPTION_TEXT }} className="ml-2">{modules?.onThisDay ? (modules.onThisDay as any).year : "2007"}</span>
                 </>
               }
               categoryColor={COLORS.THEME.LABEL_TEXT}
               accentColor={COLORS.ON_THIS_DAY.BACKGROUND}
               bgColor={COLORS.THEME.CARD_BG}
-              contentElement={<div className="type-headline line-clamp-4" style={{ color: COLORS.THEME.HEADLINE_TEXT }}>Apple announced the original iPhone.</div>}
+              contentElement={<div className="type-headline line-clamp-4" style={{ color: COLORS.THEME.HEADLINE_TEXT }}>{modules?.onThisDay ? (modules.onThisDay as any).event : "Apple announced the original iPhone."}</div>}
             />
           </div>
         </div>
@@ -1862,6 +1847,8 @@ export const Mockup = (): JSX.Element => {
           isExpanded={isMicroHistoryExpanded}
           onExpand={() => setExpandedCard('microHistory')}
           onCollapse={() => setExpandedCard(null)}
+          titleProp={modules?.microHistory ? (modules.microHistory as any).title : undefined}
+          contentProp={modules?.microHistory ? (modules.microHistory as any).content : undefined}
         />
 
         {/* Word of the Day & Riddle - Quarter Cards */}
@@ -1891,16 +1878,18 @@ export const Mockup = (): JSX.Element => {
                 </div>
                 <div>
                   <div className="type-headline" style={{ color: COLORS.THEME.HEADLINE_TEXT }}>
-                    Inure
+                    {modules?.wordOfTheDay ? (modules.wordOfTheDay as any).word : "Inure"}
                   </div>
                   <div
                     className="type-caption"
-                    style={{ marginTop: 'calc(var(--text-label) * 0.5)', opacity: 0.7, color: COLORS.THEME.CAPTION_TEXT }}
+                    style={{ marginTop: 'calc(var(--text-label) * 0.15)', opacity: 0.7, color: COLORS.THEME.CAPTION_TEXT }}
                   >
-                    [IN-YOOR] VERB
+                    {modules?.wordOfTheDay
+                      ? (modules.wordOfTheDay as any).partOfSpeech?.toUpperCase()
+                      : "VERB"}
                   </div>
-                  <div className="type-reading" style={{ color: COLORS.THEME.BODY_TEXT }}>
-                    to accustom to hardship, difficulty, or pain
+                  <div className="type-reading" style={{ fontSize: 'calc(16px * var(--scale))', lineHeight: 1.25, color: COLORS.THEME.BODY_TEXT }}>
+                    {modules?.wordOfTheDay ? (modules.wordOfTheDay as any).definition : "to accustom to hardship, difficulty, or pain"}
                   </div>
                 </div>
               </CardContent>
@@ -1911,8 +1900,8 @@ export const Mockup = (): JSX.Element => {
               category="RIDDLE"
               categoryColor={COLORS.THEME.LABEL_TEXT}
               accentColor={COLORS.RIDDLE.BACKGROUND}
-              question={RIDDLE_DATA.question}
-              answer={RIDDLE_DATA.answer}
+              question={modules?.riddle ? (modules.riddle as any).riddle : RIDDLE_DATA.question}
+              answer={modules?.riddle ? (modules.riddle as any).answer : RIDDLE_DATA.answer}
               bgColor={COLORS.THEME.CARD_BG}
             />
           </div>
@@ -1923,6 +1912,8 @@ export const Mockup = (): JSX.Element => {
           isExpanded={isWikiSummaryExpanded}
           onExpand={() => setExpandedCard('wikiSummary')}
           onCollapse={() => setExpandedCard(null)}
+          articleTitleProp={modules?.wikiSummary ? (modules.wikiSummary as any).articleTitle : undefined}
+          summaryProp={modules?.wikiSummary ? (modules.wikiSummary as any).summary : undefined}
         />
 
         {/* Seen It All Section */}
@@ -1959,8 +1950,8 @@ export const Mockup = (): JSX.Element => {
         }}
       >
         <div
-          className="type-caption text-center"
-          style={{ color: COLORS.UTILITY.FOOTER_TEXT, fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace", textTransform: 'uppercase', letterSpacing: 'var(--tracking-wide)' }}
+          className="type-label text-center"
+          style={{ color: COLORS.UTILITY.FOOTER_TEXT }}
         >
           Designed and developed
           <br />

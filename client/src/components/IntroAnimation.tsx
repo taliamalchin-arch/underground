@@ -155,6 +155,51 @@ export const IntroAnimation = ({ onComplete }: { onComplete: () => void }) => {
                 />
               ))}
             </motion.div>
+
+            {/* Center copy stack */}
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              {/* "Underground" — type-headline */}
+              <motion.div
+                className="type-headline"
+                style={{ color: "white" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0, 0.8, 0, 1, 0.1, 0, 0.6, 1] }}
+                transition={{
+                  duration: 0.6,
+                  delay: 0.2,
+                  times: [0, 0.1, 0.2, 0.35, 0.45, 0.55, 0.7, 1],
+                  ease: "linear",
+                }}
+              >
+                Underground
+              </motion.div>
+              {/* Subtitle — type-label */}
+              <motion.div
+                className="type-label"
+                style={{ color: "#B8B8BC" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0, 0.7, 0, 0.9, 0, 0.5, 0, 1] }}
+                transition={{
+                  duration: 0.6,
+                  delay: 0.45,
+                  times: [0, 0.1, 0.2, 0.35, 0.45, 0.6, 0.75, 1],
+                  ease: "linear",
+                }}
+              >
+                RIDE THE OFFLINE
+              </motion.div>
+            </div>
           </motion.div>
         )}
     </AnimatePresence>

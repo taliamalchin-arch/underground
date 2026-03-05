@@ -167,28 +167,3 @@ export const CONTENT_TIMING = {
   },
 } as const;
 
-export const MOTION_PRESETS = {
-  cardTransition: PARENT_SPRING.expand,
-  contentEnter: {
-    duration: CONTENT_TIMING.enter.duration,
-    delay: CONTENT_TIMING.enter.delay,
-    ease: EASING.SOFT,
-  },
-  contentExit: {
-    duration: CONTENT_TIMING.exit.duration,
-  },
-  buttonPress: {
-    duration: DURATION.QUICK,
-    ease: EASING.STANDARD,
-  },
-} as const;
-
-export const CSS_TIMING_VARS = {
-  '--duration-instant': `${DURATION.INSTANT}s`,
-  '--duration-quick': `${DURATION.QUICK}s`,
-  '--duration-standard': `${DURATION.STANDARD}s`,
-  '--duration-card': `${DURATION.CARD}s`,
-  '--duration-slow': `${DURATION.SLOW}s`,
-  '--ease-sharp': 'cubic-bezier(0.4, 0, 0.15, 1)',
-  '--ease-standard': 'cubic-bezier(0.4, 0, 0.2, 1)',
-} as const;

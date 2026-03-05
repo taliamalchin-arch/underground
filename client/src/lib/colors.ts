@@ -105,5 +105,3 @@ export const COLORS = {
   },
 } as const;
 
-// Helper type for TypeScript autocomplete
-export type ModuleColors = keyof typeof COLORS;
