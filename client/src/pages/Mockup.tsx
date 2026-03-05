@@ -448,7 +448,7 @@ const getFactleDayNumber = (): string => {
 const BottleCapFront = () => (
   <svg viewBox="0 0 900 900" style={{ width: '125%', height: '125%', filter: `drop-shadow(-2px 3px 4px ${COLORS.INTERACTIVE.SHADOW})` }}>
     {/* PNG image for front cap */}
-    <image href="/figmaAssets/factle-front.svg" width="900" height="900" />
+    <image href={`${import.meta.env.BASE_URL}figmaAssets/factle-front.svg`} width="900" height="900" />
   </svg>
 );
 
@@ -471,7 +471,7 @@ const BottleCapBack = ({ fact, dayNumber }: { fact: string; dayNumber: string })
       </defs>
 
       {/* PNG image for back cap background */}
-      <image href="/figmaAssets/factle-back.svg" width="900" height="900" />
+      <image href={`${import.meta.env.BASE_URL}figmaAssets/factle-back.svg`} width="900" height="900" />
 
       {/* Center fact text - body copy style (type-reading) */}
       <text
@@ -1021,7 +1021,7 @@ const QuarterTextCard = ({
 // Scratch-off brush config
 const SCRATCH_BRUSH_W = 14;
 const SCRATCH_BRUSH_H = Math.round(SCRATCH_BRUSH_W * (67 / 87));
-const SCRATCH_REVEAL_THRESHOLD = 0.55;
+// No auto-reveal — user must scratch to uncover, canvas never auto-clears
 const SCRATCH_BRUSH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="87" height="67" viewBox="0 0 87 67" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M84.8043 6.81621L84.5137 7.93432L84.514 7.93544L83.9566 10.1173L83.8711 10.4514L83.0477 12.7679L82.9737 12.9753L82.1385 14.9309L81.9189 15.4712L82.5593 15.8821L85.6983 19.7517L83.7092 22.0426L83.722 22.0994L83.8544 22.7034L83.81 25.8288L83.243 28.3889L82.0824 33.917L80.6083 34.4411L80.5062 34.7603L80.1094 35.9977L79.405 39.7123L78.5229 47.3806L76.9459 45.8932L76.9119 46.5788L76.9043 46.7273L77.1822 47.314L76.9669 48.9438L77.2442 51.317L76.5637 52.0009L76.5417 52.1692L76.3036 52.7733L76.7419 53.922L75.9006 58.7975L75.5322 59.6221L75.421 59.8695C75.3265 60.584 75.1269 61.3137 74.82 61.9828C74.327 63.0576 73.6601 61.756 73.0028 61.9953L73.1772 66.5471L68.1652 66.5346L66.8832 65.4167L65.9353 64.7816L65.8253 64.7074L65.1816 64.0875L63.6339 66.0898L62.7348 64.4899L62.277 64.3831L61.1855 64.2908L61.0737 64.2818L60.9662 64.2519L59.6827 63.9004L58.9131 63.4696L58.4166 63.5973L56.5392 64.7585L55.4272 64.1701L52.0324 64.8576L51.3764 63.3495L50.4109 63.0681L50.3541 63.052L50.2996 63.0301L49.1894 62.588L49.0207 62.5202L48.8926 62.4224L46.2938 64.6192L44.9166 62.5249L44.3124 62.5519L43.1844 61.1944L42.5141 61.0085L41.5939 60.846L40.5891 60.9678L39.1429 61.1696L38.9333 61.1276L37.7816 60.8934L37.7447 60.8867L36.5693 60.5725L35.7562 60.367L34.6195 60.6631L34.4048 60.6481L33.3576 60.5724L31.6019 60.8028L30.8051 59.934L30.4649 60.103L29.8383 60.4128L28.9471 60.0168L27.6683 61.0706L25.8756 60.541L24.7837 60.3434L24.7609 60.3396L24.7388 60.335L24.6435 60.3139L22.9755 61.2805L22.1936 60.4481L21.9363 60.5523L20.9798 60.9364L19.8057 59.4609L18.6493 60.6291L16.0262 61.2352L15.5818 59.626L14.3297 61.1229L12.6237 59.3282L12.4129 59.3557L10.8112 60.379L9.08561 59.7979L8.84249 59.7332L7.16052 61.5335L5.48812 60.1969L5.2038 60.2422L1.73915 62.6443L1.49375 57.0868L0.800835 58.1609L0.0176614 52.9861L-0.000539105 52.8666L1.1682 51.6854L0.35496 49.9639L1.40699 45.438L0.209537 42.3939L2.73781 36.6464L2.59991 36.6007L2.97126 36.1153L3.57255 34.749L3.5039 34.0616L3.80717 34.215L3.88059 34.0481L4.14393 34.3859L4.25334 34.4412L6.91622 30.964L7.10199 30.7208L6.82123 30.6075L5.64529 27.8971L5.23989 25.5438L5.2111 25.3783L5.19282 25.2057L4.14893 15.4661L8.35431 17.1808L8.37148 17.1876L8.12877 16.4416L10.7316 9.83467L12.4574 10.57L12.9594 10.785L13.0402 10.7489L11.0176 6.21116L15.3063 7.51419L15.6936 8.71752L16.1362 7.8054C16.1548 7.64021 16.1785 7.47283 16.2089 7.30502L16.2538 6.95296L16.3136 6.47905L16.433 6.01351L16.4587 5.91267C17.0288 3.6834 18.4463 2.2277 19.6245 2.66213C20.0484 2.81849 20.3829 3.19947 20.6118 3.72531L21.2798 3.52945L21.8957 3.34765L22.3878 -0.000170555L26.0273 4.20402L26.998 4.2365L28.0606 5.84058L28.4743 5.95894L29.0134 5.9016L31.1209 2.38784L31.9789 3.42588L32.0858 3.55465L32.2253 3.44858L32.8755 2.94896L34.5677 3.24483L35.6572 3.269L36.1108 3.27804L37.3466 4.34562L37.8104 4.54432L38.5782 4.28092L38.7767 4.2123L40.177 4.1321L40.291 4.12588L40.4025 4.13895L41.393 4.25895L43.0055 3.99735L43.9348 4.75558L44.5001 4.56311L45.2708 4.29928L46.5449 5.49785L46.9117 5.54177L47.8145 5.11824L47.8875 5.08464L47.9601 5.05824L49.6597 4.4337L51.0029 4.77695L52.0171 4.72586L52.579 4.69626L53.2548 5.36463L53.5829 5.16182L54.3439 4.68969L55.9046 5.49542L56.8577 5.62423L57.0588 5.65092L57.9785 6.1071L58.7867 5.96683L58.8131 5.96196L58.8398 5.9582L60.0513 5.79344L60.1827 5.77632L61.0023 5.82804L62.5797 4.78397L64.3266 5.71019L65.2052 6.01705L65.2982 6.01894L65.8135 5.3315L66.4037 4.54212L69.1425 3.60821L69.6545 4.16918L70.6819 2.83012L72.3009 3.72212L73.4068 3.05902L74.633 3.42867L75.7842 2.81993L77.1456 3.02114L78.0895 2.76046L78.33 2.69338L78.8613 2.73751L80.7643 4.3524L82.4495 6.09382L86.3538 4.83649L84.8043 6.81621ZM48.0322 12.0482L47.5724 13.1838L47.7077 13.2206L48.9389 12.8631L48.6092 12.7791L48.0322 12.0482ZM58.0261 14.1524L57.7702 14.1964L58.1816 14.3737L58.2331 14.4231L58.4691 14.0915L58.0261 14.1524Z" fill="black"/></svg>`;
 
 function createScratchBrush(): Promise<HTMLCanvasElement> {
@@ -1064,7 +1064,6 @@ const RevealCard = ({
   const brushRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawing = useRef(false);
   const lastPoint = useRef<{ x: number; y: number } | null>(null);
-  const [revealed, setRevealed] = useState(false);
   const [healing, setHealing] = useState(false);
   const [hasScratched, setHasScratched] = useState(false);
 
@@ -1166,14 +1165,13 @@ const RevealCard = ({
 
   useEffect(() => {
     initCanvas();
-    setRevealed(false);
   }, [initCanvas]);
 
   useEffect(() => {
-    const handleResize = () => { if (!revealed) initCanvas(); };
+    const handleResize = () => { if (!healing) initCanvas(); };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [initCanvas, revealed]);
+  }, [initCanvas, healing]);
 
   const getPos = (e: React.TouchEvent | React.MouseEvent) => {
     const canvas = canvasRef.current;
@@ -1219,23 +1217,9 @@ const RevealCard = ({
     lastPoint.current = { x, y };
   };
 
-  const checkReveal = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const pixels = imageData.data;
-    let transparent = 0;
-    const total = pixels.length / 4;
-    for (let i = 3; i < pixels.length; i += 4) {
-      if (pixels[i] === 0) transparent++;
-    }
-    if (transparent / total >= SCRATCH_REVEAL_THRESHOLD) setRevealed(true);
-  };
+  // No auto-reveal check — scratching only removes what the user touches
 
   const handleStart = (e: React.TouchEvent | React.MouseEvent) => {
-    if (revealed) return;
     e.preventDefault();
     isDrawing.current = true;
     lastPoint.current = null;
@@ -1245,7 +1229,7 @@ const RevealCard = ({
   };
 
   const handleMove = (e: React.TouchEvent | React.MouseEvent) => {
-    if (!isDrawing.current || revealed) return;
+    if (!isDrawing.current) return;
     e.preventDefault();
     const pos = getPos(e);
     scratch(pos.x, pos.y);
@@ -1255,14 +1239,12 @@ const RevealCard = ({
     if (!isDrawing.current) return;
     isDrawing.current = false;
     lastPoint.current = null;
-    checkReveal();
   };
 
   const healAnimRef = useRef(0);
   const heal = useCallback(() => {
     setHealing(true);
     setHasScratched(false);
-    setRevealed(false);
     lastPoint.current = null;
 
     const canvas = canvasRef.current;
@@ -1325,8 +1307,7 @@ const RevealCard = ({
   }, [initCanvas, bgColor]);
 
   const handleRevealedTap = () => {
-    if (!revealed || healing) return;
-    heal();
+    if (healing) return;
   };
 
   return (
@@ -1377,19 +1358,20 @@ const RevealCard = ({
           position: "relative",
           flex: 1,
           overflow: "hidden",
-          cursor: revealed ? "pointer" : "crosshair",
+          cursor: "crosshair",
         }}
       >
-        {/* Bottom layer: answer on accent-colored surface */}
+        {/* Bottom layer: answer on accent-colored surface — hidden until user scratches */}
         <div
           style={{
             position: "absolute",
             inset: 0,
-            backgroundColor: accentColor || COLORS.THEME.CARD_BG_ELEVATED,
+            backgroundColor: hasScratched ? (accentColor || COLORS.THEME.CARD_BG_ELEVATED) : bgColor,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             padding: "var(--card-padding)",
+            transition: "background-color 0s",
           }}
         >
           <div
@@ -1406,9 +1388,8 @@ const RevealCard = ({
           style={{
             position: "absolute",
             inset: 0,
-            opacity: revealed ? 0 : 1,
-            transition: "opacity 0.5s ease",
-            pointerEvents: revealed || healing ? "none" : "auto",
+            opacity: 1,
+            pointerEvents: healing ? "none" : "auto",
           }}
           onMouseDown={handleStart}
           onMouseMove={handleMove}
@@ -1435,11 +1416,11 @@ const RevealCard = ({
           background: "none",
           border: "none",
           padding: 0,
-          pointerEvents: hasScratched && !revealed ? "auto" : "none",
-          cursor: hasScratched && !revealed ? "pointer" : "default",
+          pointerEvents: hasScratched ? "auto" : "none",
+          cursor: hasScratched ? "pointer" : "default",
         }}
         onClick={(e) => {
-          if (hasScratched && !revealed) {
+          if (hasScratched) {
             e.stopPropagation();
             if (!healing) heal();
           }
@@ -1485,13 +1466,14 @@ const RevealCard = ({
               animate={{ opacity: 1, scale: 1, rotate: 0 }}
               exit={{ opacity: 0, scale: 0.6 }}
               transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+              style={{ transformOrigin: "top right" }}
             >
               <svg
                 viewBox="0 0 16 16"
                 fill="none"
                 style={{
-                  width: "calc(var(--close-btn-size) * 0.35)",
-                  height: "calc(var(--close-btn-size) * 0.35)",
+                  width: "calc(var(--close-btn-size) * 0.42)",
+                  height: "calc(var(--close-btn-size) * 0.42)",
                 }}
               >
                 <path

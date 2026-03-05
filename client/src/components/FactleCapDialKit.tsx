@@ -66,7 +66,7 @@ const FactleCapDialKit = ({ fact = 'Sharks are older than trees', dayNumber = '0
           </defs>
 
           {/* SVG image for back cap background */}
-          <image href="/figmaAssets/factle-back.svg" width="900" height="900" />
+          <image href={`${import.meta.env.BASE_URL}figmaAssets/factle-back.svg`} width="900" height="900" />
 
           {/* Center fact text — split into two lines */}
           <text
