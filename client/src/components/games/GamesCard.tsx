@@ -261,8 +261,7 @@ export const GamesCard = ({ isExpanded, onExpand, onCollapse }: GamesCardProps) 
                 borderRadius: 'var(--image-radius)',
                 aspectRatio: '313/308',
               }}
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
+              /* Swipe disabled during gameplay — games use touch for controls */
             >
               <AnimatePresence initial={false} custom={slideDir}>
                 <motion.div

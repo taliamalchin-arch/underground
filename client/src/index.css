@@ -144,7 +144,7 @@
 
 /* Display — Satoshi-Bold, dynamic date header (one instance) */
 .type-display {
-  font-family: 'Satoshi-Bold', Helvetica, sans-serif;
+  font-family: 'Satoshi', 'Satoshi-Bold', Helvetica, sans-serif;
   font-weight: 700;
   letter-spacing: var(--tracking-tight);
   white-space: nowrap;
@@ -163,7 +163,7 @@
 
 /* Headline — Satoshi-Bold, card titles + static card content */
 .type-headline {
-  font-family: 'Satoshi-Bold', Helvetica, sans-serif;
+  font-family: 'Satoshi', 'Satoshi-Bold', Helvetica, sans-serif;
   font-weight: 700;
   font-size: var(--text-headline);
   line-height: var(--leading-headline);
@@ -172,7 +172,7 @@
 
 /* Reading — Satoshi-Regular, expanded body text */
 .type-reading {
-  font-family: 'Satoshi-Regular', Helvetica, sans-serif;
+  font-family: 'Satoshi', 'Satoshi-Regular', Helvetica, sans-serif;
   font-weight: 400;
   font-size: var(--text-reading);
   line-height: var(--leading-reading);
@@ -181,7 +181,7 @@
 
 /* Caption — Satoshi-Regular, teasers + metadata + footer */
 .type-caption {
-  font-family: 'Satoshi-Regular', Helvetica, sans-serif;
+  font-family: 'Satoshi', 'Satoshi-Regular', Helvetica, sans-serif;
   font-weight: 400;
   font-size: var(--text-caption);
   line-height: var(--leading-caption);

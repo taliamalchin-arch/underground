@@ -480,7 +480,7 @@ const BottleCapBack = ({ fact, dayNumber }: { fact: string; dayNumber: string })
         textAnchor="middle"
         fill={COLORS.FACTLE.CAP_TEXT_DARK}
         fontSize="80"
-        fontFamily="Satoshi-Regular, Helvetica, sans-serif"
+        fontFamily="Satoshi, Satoshi-Regular, Helvetica, sans-serif"
         fontWeight="400"
         letterSpacing="-0.7"
       >
@@ -1079,20 +1079,18 @@ const RevealCard = ({
     const rect = container.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
 
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    // 100% ensures pixel-perfect coverage via inset:0 — no subpixel gaps at edges
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
+    // +2px overflow on each side to prevent subpixel edge bleed
+    canvas.width = (rect.width + 2) * dpr;
+    canvas.height = (rect.height + 2) * dpr;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     ctx.scale(dpr, dpr);
 
-    // Fill with the card background color
+    // Fill with the card background color (+2px overflow to cover subpixel edges)
     ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, rect.width, rect.height);
+    ctx.fillRect(0, 0, rect.width + 2, rect.height + 2);
 
     // ══ CANVAS MODULE CHECK ════════════════════════════════════════════════
     // These constants mirror .type-headline in index.css exactly.
@@ -1113,7 +1111,7 @@ const RevealCard = ({
     const fontSize = TYPE_HEADLINE_BASE_PX * scale;
 
     ctx.fillStyle = COLORS.THEME.HEADLINE_TEXT;
-    ctx.font = `700 ${fontSize}px 'Satoshi-Bold', Helvetica, sans-serif`;
+    ctx.font = `700 ${fontSize}px 'Satoshi', 'Satoshi-Bold', Helvetica, sans-serif`;
     ctx.letterSpacing = `${TYPE_HEADLINE_TRACKING * fontSize}px`; // -0.04em in px
     ctx.textBaseline = "top";
 
@@ -1156,9 +1154,10 @@ const RevealCard = ({
     // Outer div has padding:var(--card-padding) — canvas fills the inner area
     // below the label. No extra offset needed here. startY must NOT be 0.
     // ────────────────────────────────────────────────────────────────────────
-    const startY = Math.max(0, rect.height - textBlockHeight);
+    // +1px offset accounts for canvas overflow padding
+    const startY = Math.max(0, rect.height - textBlockHeight) + 1;
     lines.forEach((line, i) => {
-      ctx.fillText(line, 0, startY + i * lineHeight);
+      ctx.fillText(line, 1, startY + i * lineHeight);
     });
 
   }, [bgColor, question]);
@@ -1361,17 +1360,16 @@ const RevealCard = ({
           cursor: "crosshair",
         }}
       >
-        {/* Bottom layer: answer on accent-colored surface — hidden until user scratches */}
+        {/* Bottom layer: answer on accent-colored surface */}
         <div
           style={{
             position: "absolute",
             inset: 0,
-            backgroundColor: hasScratched ? (accentColor || COLORS.THEME.CARD_BG_ELEVATED) : bgColor,
+            backgroundColor: accentColor || COLORS.THEME.CARD_BG_ELEVATED,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             padding: "var(--card-padding)",
-            transition: "background-color 0s",
           }}
         >
           <div
@@ -1387,8 +1385,9 @@ const RevealCard = ({
           ref={canvasRef}
           style={{
             position: "absolute",
-            inset: 0,
-            opacity: 1,
+            inset: "-1px",
+            width: "calc(100% + 2px)",
+            height: "calc(100% + 2px)",
             pointerEvents: healing ? "none" : "auto",
           }}
           onMouseDown={handleStart}
