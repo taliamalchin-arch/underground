@@ -1145,12 +1145,11 @@ const RevealCard = ({
     // (n-1)*lineHeight + fontSize — last line's em-square flush to canvas bottom.
     // DO NOT use n*lineHeight: that adds a trailing gap making text sit too high
     // relative to adjacent DOM quarter cards (On This Day, Word of Day, etc).
-    const textBlockHeight = (lines.length - 1) * lineHeight + fontSize;
+    // Use full lineHeight for last line too, so descenders aren't clipped
+    const textBlockHeight = lines.length * lineHeight;
 
     // ── BOTTOM-PIN ───────────────────────────────────────────────────────────
-    // startY pins the last line's em-square to the canvas bottom.
-    // Outer div has padding:var(--card-padding) — canvas fills the inner area
-    // below the label. No extra offset needed here. startY must NOT be 0.
+    // startY pins text block to canvas bottom with room for descenders.
     // ────────────────────────────────────────────────────────────────────────
     const startY = Math.max(0, rect.height - textBlockHeight);
     lines.forEach((line, i) => {

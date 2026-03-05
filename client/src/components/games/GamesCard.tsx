@@ -260,8 +260,8 @@ export const GamesCard = ({ isExpanded, onExpand, onCollapse }: GamesCardProps) 
               style={{
                 borderRadius: 'var(--image-radius)',
                 aspectRatio: '313/308',
+                touchAction: 'none',
               }}
-              /* Swipe disabled during gameplay — games use touch for controls */
             >
               <AnimatePresence initial={false} custom={slideDir}>
                 <motion.div

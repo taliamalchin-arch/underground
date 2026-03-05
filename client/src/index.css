@@ -93,7 +93,7 @@
   --card-radius: calc(30px * var(--scale));
   --image-radius: calc(24px * var(--scale));
   --card-gap: calc(14px * var(--scale));
-  --container-padding: calc(9px * var(--scale));
+  --container-padding: calc(4.5px * var(--scale));
 
   /* ── Typography Scale (5-type system) ── */
   /* headline: card titles, static card content */
