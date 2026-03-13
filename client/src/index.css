@@ -168,6 +168,11 @@
   font-size: var(--text-headline);
   line-height: var(--leading-headline);
   letter-spacing: var(--tracking-tight);
+  /* Descender guard — line-clamp and card overflow:hidden clip the last
+     line's descenders (g, y, p, q). Padding expands the clip boundary,
+     negative margin cancels it so the box stays the exact same size/position. */
+  padding-bottom: 0.2em;
+  margin-bottom: -0.2em;
 }
 
 /* Reading — Satoshi-Regular, expanded body text */

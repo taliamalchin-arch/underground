@@ -1146,13 +1146,13 @@ const RevealCard = ({
     }
 
     const lineHeight = fontSize * TYPE_HEADLINE_LEADING; // 1.15, NOT 1.2
-    // (n-1)*lineHeight + fontSize — last line's em-square flush to canvas bottom.
-    // DO NOT use n*lineHeight: that adds a trailing gap making text sit too high
-    // relative to adjacent DOM quarter cards (On This Day, Word of Day, etc).
-    const textBlockHeight = (lines.length - 1) * lineHeight + fontSize;
+    // (n-1)*lineHeight + fontSize + descender guard — matches DOM .type-headline
+    // which has padding-bottom: 0.2em for the same reason.
+    const DESCENDER_GUARD = fontSize * 0.2;
+    const textBlockHeight = (lines.length - 1) * lineHeight + fontSize + DESCENDER_GUARD;
 
     // ── BOTTOM-PIN ───────────────────────────────────────────────────────────
-    // startY pins text block to canvas bottom. Descenders fit exactly at cssH.
+    // startY pins text block to canvas bottom with descender room.
     // ────────────────────────────────────────────────────────────────────────
     const startY = Math.max(0, cssH - textBlockHeight);
     lines.forEach((line, i) => {
