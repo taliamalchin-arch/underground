@@ -1175,14 +1175,18 @@ const RevealCard = ({
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const r = canvas.getBoundingClientRect();
-    // Convert visual (screen) coords to CSS pixel coords for the canvas.
-    // With CSS zoom, gBCR returns zoomed size but canvas is sized in CSS pixels.
-    const scaleX = canvas.offsetWidth / r.width;
-    const scaleY = canvas.offsetHeight / r.height;
-    if ("touches" in e) {
-      return { x: (e.touches[0].clientX - r.left) * scaleX, y: (e.touches[0].clientY - r.top) * scaleY };
-    }
-    return { x: ((e as React.MouseEvent).clientX - r.left) * scaleX, y: ((e as React.MouseEvent).clientY - r.top) * scaleY };
+    const dpr = window.devicePixelRatio || 1;
+    // Map touch position as a fraction of the visual element (0→1),
+    // then scale to the canvas CSS coordinate space. Works correctly
+    // regardless of CSS zoom, transform, or DPR.
+    const canvasCssW = canvas.width / dpr;
+    const canvasCssH = canvas.height / dpr;
+    const clientX = "touches" in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    return {
+      x: ((clientX - r.left) / r.width) * canvasCssW,
+      y: ((clientY - r.top) / r.height) * canvasCssH,
+    };
   };
 
   const scratch = (x: number, y: number) => {
