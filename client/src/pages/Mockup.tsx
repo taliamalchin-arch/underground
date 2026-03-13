@@ -1076,11 +1076,15 @@ const RevealCard = ({
     const container = containerRef.current;
     if (!canvas || !container) return;
 
-    const rect = container.getBoundingClientRect();
+    // Use offsetWidth/Height (CSS pixels), NOT getBoundingClientRect (visual/zoomed pixels).
+    // With CSS zoom on the parent, gBCR returns the zoomed size which would make
+    // canvas text render larger than DOM text at the same font-size.
+    const cssW = container.offsetWidth;
+    const cssH = container.offsetHeight;
     const dpr = window.devicePixelRatio || 1;
 
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
+    canvas.width = cssW * dpr;
+    canvas.height = cssH * dpr;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -1088,7 +1092,7 @@ const RevealCard = ({
     ctx.scale(dpr, dpr);
 
     ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, rect.width, rect.height);
+    ctx.fillRect(0, 0, cssW, cssH);
 
     // ══ CANVAS MODULE CHECK ════════════════════════════════════════════════
     // These constants mirror .type-headline in index.css exactly.
@@ -1113,8 +1117,8 @@ const RevealCard = ({
     ctx.letterSpacing = `${TYPE_HEADLINE_TRACKING * fontSize}px`; // -0.04em in px
     ctx.textBaseline = "top";
 
-    // Word-wrap — full width, no internal padding
-    const maxWidth = rect.width;
+    // Word-wrap — full width, no internal padding (card-padding is on outer div)
+    const maxWidth = cssW;
     const words = question.split(" ");
     const lines: string[] = [];
     let currentLine = words[0];
@@ -1145,13 +1149,12 @@ const RevealCard = ({
     // (n-1)*lineHeight + fontSize — last line's em-square flush to canvas bottom.
     // DO NOT use n*lineHeight: that adds a trailing gap making text sit too high
     // relative to adjacent DOM quarter cards (On This Day, Word of Day, etc).
-    // Use full lineHeight for last line too, so descenders aren't clipped
-    const textBlockHeight = lines.length * lineHeight;
+    const textBlockHeight = (lines.length - 1) * lineHeight + fontSize;
 
     // ── BOTTOM-PIN ───────────────────────────────────────────────────────────
-    // startY pins text block to canvas bottom with room for descenders.
+    // startY pins text block to canvas bottom. Descenders fit exactly at cssH.
     // ────────────────────────────────────────────────────────────────────────
-    const startY = Math.max(0, rect.height - textBlockHeight);
+    const startY = Math.max(0, cssH - textBlockHeight);
     lines.forEach((line, i) => {
       ctx.fillText(line, 0, startY + i * lineHeight);
     });
@@ -1172,10 +1175,14 @@ const RevealCard = ({
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const r = canvas.getBoundingClientRect();
+    // Convert visual (screen) coords to CSS pixel coords for the canvas.
+    // With CSS zoom, gBCR returns zoomed size but canvas is sized in CSS pixels.
+    const scaleX = canvas.offsetWidth / r.width;
+    const scaleY = canvas.offsetHeight / r.height;
     if ("touches" in e) {
-      return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
+      return { x: (e.touches[0].clientX - r.left) * scaleX, y: (e.touches[0].clientY - r.top) * scaleY };
     }
-    return { x: (e as React.MouseEvent).clientX - r.left, y: (e as React.MouseEvent).clientY - r.top };
+    return { x: ((e as React.MouseEvent).clientX - r.left) * scaleX, y: ((e as React.MouseEvent).clientY - r.top) * scaleY };
   };
 
   const scratch = (x: number, y: number) => {
@@ -1249,8 +1256,8 @@ const RevealCard = ({
     if (!ctx) { setHealing(false); return; }
 
     const dpr = window.devicePixelRatio || 1;
-    const cssW = container.getBoundingClientRect().width;
-    const cssH = container.getBoundingClientRect().height;
+    const cssW = container.offsetWidth;
+    const cssH = container.offsetHeight;
 
     const wipe1Duration = 350;
     const wipe2Duration = 400;
@@ -1346,7 +1353,7 @@ const RevealCard = ({
         </div>
       </div>
 
-      {/* Scratch area — inset below label, outline covers subpixel bleed from accent layer */}
+      {/* Scratch area — inset below label */}
       <div
         ref={containerRef}
         style={{
@@ -1354,15 +1361,15 @@ const RevealCard = ({
           flex: 1,
           overflow: "hidden",
           cursor: "crosshair",
-          outline: `1px solid ${bgColor}`,
-          outlineOffset: "-1px",
+          backgroundColor: bgColor,
         }}
       >
-        {/* Bottom layer: answer on accent-colored surface */}
+        {/* Bottom layer: answer on accent-colored surface — inset so edges always show bgColor */}
         <div
           style={{
             position: "absolute",
-            inset: 0,
+            inset: 4,
+            borderRadius: 6,
             backgroundColor: accentColor || COLORS.THEME.CARD_BG_ELEVATED,
             display: "flex",
             alignItems: "center",
@@ -1396,6 +1403,7 @@ const RevealCard = ({
           onTouchMove={handleMove}
           onTouchEnd={handleEnd}
         />
+
       </div>
 
       {/* Top-right icon: hand hint or reset — card-level, same position as other module buttons */}
@@ -1624,8 +1632,7 @@ export const Mockup = (): JSX.Element => {
         <div
           style={{
             width: '428px',
-            transform: `scale(${scale})`,
-            transformOrigin: 'top center',
+            zoom: scale,
           }}
         >
       <div
